@@ -17,9 +17,3 @@ llm_cluster_threshold: 0.75
 gamma: 0.5
 max_workers: 100  # Number of parallel LLM calls
 request_delay: 0.01  # Delay between requests (seconds)
-
-# DELETE ALL THEEESE
-# Activation clustering settings (for activation method)
-# layer: 20
-# token_position: -1
-# activation_similarity_threshold: 0.85  # Cosine similarity threshold for activation clustering

@@ -3,11 +3,113 @@ Goal:
 
 ToDo:
 * make --recompute flag work for all commands!
-* write a script to automatically generate cue dictionaries for algorithms and write to algorithms.json
-* Add "models" property checker to check model name
 * make predictions changing parameters easier
+* check you dont need to add the prompt filter if you dont care about the correctness property checker
+* make sure there are defaults for every parameter
 
 * should I let people try using either sentence or llm? Like use just one stage and not both, this could be good
+* yeah i should edit this
+
+* if it blows up ill make a docker with graphviz installed 
+* create an alternative messier version if people haven't installed pygraphviz
+
+## Installation 
+
+```bash
+git clone https://github.com/Centrattic/global-cot-analysis.git
+cd global-cot-analysis
+uv sync
+```
+Note: To embed our semantic clustering graphs, we use the package pygraphviz, which requires [installing graphviz](https://graphviz.org/download/) first.
+
+## Viewing existing results 
+
+Head to our [Vercel page](https://cot-clustering.vercel.app/).
+
+## Running your own experiments!
+
+If you have any issues, please reach out to us at riyaty@mit.edu. If you're interested in building on this work, we'd love to support you.
+
+### Quickstart
+
+If you just want to jump into the codebase, [finish]
+
+### Configuration 
+
+We use [Hydra](https://hydra.cc/docs/intro/) to manage our configs. There are four types of configs:
+- **rollout** configs, in `config/r`. These configure the process of generating rollouts and resamples of a model on a fixed prompt.
+- **flowchart** configs, in `config/f`. These configure the two-stage clustering process to generate semantic clustering graphs.
+- **predictions** configs, in `config/p`. These configure the predictions pipeline.
+- **algorithms** configs, in `config/a`. These configure the process of generating algorithm cue dictionaries.
+
+We then recommend creating a unique config file for each prompt that uses rollout, flowchart, predictions, and algorithms config files. Examples are further below.
+
+### Adding a new prompt
+
+To add a new prompt:
+1. Add a new prompt to `prompts/prompts.json.`
+2. Create a unique config file. The minimal specification required is just the models you wish to run the prompt on. To see all supported models, check out `MODEL_CONFIGS` in `src/utils/model_utils.py`, where you can easily add additional models (information below). We provide the following example of the config file for the "hex" problem.
+
+```yaml
+defaults:
+  - _self_
+  - r: default
+  - f: default
+  - p: default
+  - a: default
+
+_name_: "hex"
+
+prompt: "hex"
+models: ["gpt-oss-20b"]
+```
+
+### To run rollouts on a given prompt
+
+To run rollouts, first create a rollout config. You can just use the default.
+
+```yaml
+_name_: "default"
+
+num_seeds_rollouts: 50 # rename 
+num_seeds_prefixes: 10 # trials over prefixes
+max_workers: 250
+
+# Number of prefixes to generate when running the 'prefixes' command
+num_prefixes_to_generate: 5
+
+# they can study the rollouts, and then see the resamples and how they're different from the rollouts on the graphs maybe
+```
+
+```bash
+cd global-cot-analysis
+python -m src.main --config-name=hex command=rollouts
+```
+
+### To run resamples with various prefixes
+
+Something you may want to do is resample model chains of thought with various prefixes. These resamples can be displayed on the semantic clustering graph.
+
+To do this
+
+
+
+### To create semantic clustering graphs
+
+Here, we rely on the **flowchart** configuration. You can simply use the default; a brief explanation of the parameters is below.
+
+
+
+```bash
+cd global-cot-analysis
+python -m src.main --config-name=hex command=rollouts
+```
+
+
+2. Initialize a prompt response parser with the correct/incorrect answers in `src/utils/prompt_utils.py` to the `PROMPT_FILTERS` dictionary.
+
+
+### Adding new prompts
 
 
 ### Config structure
@@ -18,8 +120,6 @@ Each flowchart should be associated with a new config, that could reuse existing
 
 If you want to switch prompt, models, prefixes, property_checkers, create a new config file in configs/ or in some cases, you can use an override (covered later). For changing command, definitely use an override.
 
-
-### To view existing results, head to vercel page.
 
 
 
