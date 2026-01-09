@@ -66,6 +66,10 @@ def main_with_config(cfg: DictConfig,
         runner = PropertyRunner(cfg, recompute=recompute)
         runner.run_properties_from_config(cfg._name_)
 
+    elif command == "cues":
+        from src.labeling.generate_algorithms import generate_algorithms_from_config
+        generate_algorithms_from_config(cfg)
+
     else:
         print(f"Unknown command: {command}")
 

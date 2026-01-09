@@ -3,6 +3,7 @@ defaults:
   - r: default
   - f: default
   - p: default
+  - a: default
 
 _name_: "hex"
 prompt: "hex"
