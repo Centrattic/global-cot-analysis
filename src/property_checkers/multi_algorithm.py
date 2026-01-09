@@ -116,19 +116,20 @@ class PropertyCheckerMultiAlgorithm(PropertyCheckerMulti):
         filtered_boundaries = []
         filtered_alg_sequence = []
         prev_boundary = 0
-        
+
         for i in range(len(boundaries)):
             if i == 0:
-                if boundaries[0] >= 3: # at least 3 sentences between boundaries
+                if boundaries[
+                        0] >= 3:  # at least 3 sentences between boundaries
                     filtered_boundaries.append(boundaries[0])
-                    filtered_alg_sequence.append(alg_sequence[i+1])
+                    filtered_alg_sequence.append(alg_sequence[i + 1])
                 else:
                     continue
             else:
-                boundary_distance = boundaries[i] - boundaries[i-1]
+                boundary_distance = boundaries[i] - boundaries[i - 1]
                 # if boundary_distance >= 3: # we actually filter over in AlgorithmStructure.tsx
                 filtered_boundaries.append(boundaries[i])
-                filtered_alg_sequence.append(alg_sequence[i+1])
+                filtered_alg_sequence.append(alg_sequence[i + 1])
                 # else:
                 #     continue
 

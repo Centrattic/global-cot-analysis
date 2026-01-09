@@ -56,7 +56,9 @@ def main_with_config(cfg: DictConfig,
 
     elif command in ("predictions", "prediction"):
         from src.predictions.prediction_runner import PredictionRunner
-        runner = PredictionRunner(cfg, use_condensed=False, use_fully_condensed=False)
+        runner = PredictionRunner(cfg,
+                                  use_condensed=False,
+                                  use_fully_condensed=False)
         runner.run_predictions_from_config(cfg._name_)
 
     elif command == "properties":

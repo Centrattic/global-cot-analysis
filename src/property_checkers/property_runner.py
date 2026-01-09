@@ -35,7 +35,8 @@ class PropertyRunner:
         prompt_index = self.config["prompt"]
         models = list(self.config["models"])
         property_checker_names = list(self.config.get("property_checkers", []))
-        node_property_checker_names = list(self.config.get("node_property_checkers", []))
+        node_property_checker_names = list(
+            self.config.get("node_property_checkers", []))
 
         print(f"Running property checkers for prompt: {prompt_index}")
         print(f"Models: {models}")
@@ -53,10 +54,11 @@ class PropertyRunner:
 
         # Process flowcharts
         self._process_flowcharts(prompt_index, models, property_checker_names)
-        
+
         # Process node property checkers in flowcharts if specified
         if node_property_checker_names and self.recompute:
-            self._process_flowchart_node_properties(prompt_index, node_property_checker_names)
+            self._process_flowchart_node_properties(
+                prompt_index, node_property_checker_names)
 
     def _process_model_rollouts(self, prompt_index: str, model: str,
                                 property_checker_names: List[str]):
@@ -77,10 +79,13 @@ class PropertyRunner:
         print(f"Found {len(json_files)} JSON files to process")
 
         # Collect all file paths
-        file_paths = [os.path.join(rollout_dir, json_file) for json_file in json_files]
-        
+        file_paths = [
+            os.path.join(rollout_dir, json_file) for json_file in json_files
+        ]
+
         # Process files in parallel batches for checkers that support it
-        self._process_files_batch_parallel(file_paths, prompt_index, property_checker_names)
+        self._process_files_batch_parallel(file_paths, prompt_index,
+                                           property_checker_names)
 
     def _process_model_resamples(self, prompt_index: str, model: str,
                                  property_checker_names: List[str]):
@@ -129,10 +134,13 @@ class PropertyRunner:
         print(f"    Found {len(json_files)} JSON files")
 
         # Collect all file paths
-        file_paths = [os.path.join(prefix_path, json_file) for json_file in json_files]
-        
+        file_paths = [
+            os.path.join(prefix_path, json_file) for json_file in json_files
+        ]
+
         # Process files in parallel batches for checkers that support it
-        self._process_files_batch_parallel(file_paths, prompt_index, property_checker_names)
+        self._process_files_batch_parallel(file_paths, prompt_index,
+                                           property_checker_names)
 
     def _process_single_file(self, file_path: str, prompt_index: str,
                              property_checker_names: List[str]):
@@ -196,7 +204,8 @@ class PropertyRunner:
             # Check if it looks like a model name (has numbers or multiple parts)
             potential_model = match.group(0)[1:]  # Remove leading underscore
             # If it has numbers or multiple underscores, it's likely a model name
-            if re.search(r'\d', potential_model) or potential_model.count('_') >= 2:
+            if re.search(r'\d',
+                         potential_model) or potential_model.count('_') >= 2:
                 f_config_base = f_config_base[:match.start()]
 
         for model in models:
@@ -204,10 +213,10 @@ class PropertyRunner:
             # Format: config-{config_name}-{f_config_base}_{model}_flowchart.json
             # Model names like "claude-sonnet-3.7" need to be converted to "claude_sonnet_3.7"
             model_safe = model.replace("/", "_").replace("-", "_")
-            
+
             # First try: config-{base_config_name}-{f_config_base}_{model}_flowchart.json
             flowchart_path = f"flowcharts/{prompt_index}/config-{base_config_name}-{f_config_base}_{model_safe}_flowchart.json"
-            
+
             print(f"Looking for flowchart: {flowchart_path}")
             if not os.path.exists(flowchart_path):
                 # Use glob to find the correct flowchart
@@ -216,10 +225,12 @@ class PropertyRunner:
                 matches = glob.glob(pattern)
                 # Filter out condensed versions
                 matches = [m for m in matches if "_condensed" not in m]
-                
+
                 if matches:
                     # Find flowchart that contains this model name but NOT other model names
-                    all_models_safe = [m.replace("/", "_").replace("-", "_") for m in models]
+                    all_models_safe = [
+                        m.replace("/", "_").replace("-", "_") for m in models
+                    ]
                     model_matches = []
                     for match in matches:
                         # Check if this match contains our model
@@ -232,20 +243,24 @@ class PropertyRunner:
                                     break
                             if not has_other_model:
                                 model_matches.append(match)
-                    
+
                     if model_matches:
                         flowchart_path = model_matches[0]
                         print(f"Found flowchart via glob: {flowchart_path}")
                     else:
-                        print(f"Flowchart file not found for model {model} (searched: {matches})")
+                        print(
+                            f"Flowchart file not found for model {model} (searched: {matches})"
+                        )
                         continue
                 else:
-                    print(f"Flowchart file not found for model {model}: {flowchart_path}")
+                    print(
+                        f"Flowchart file not found for model {model}: {flowchart_path}"
+                    )
                     continue
 
             print(f"Processing flowchart for model {model}: {flowchart_path}")
-            self._process_single_flowchart(flowchart_path, prompt_index, models,
-                                           property_checker_names)
+            self._process_single_flowchart(flowchart_path, prompt_index,
+                                           models, property_checker_names)
 
     def _process_single_flowchart(self, flowchart_path: str, prompt_index: str,
                                   models: List[str],
@@ -287,7 +302,8 @@ class PropertyRunner:
         """Update properties for a single response in a flowchart. Returns True if any properties were updated."""
         try:
             # Treat missing or None resampled as rollout (False)
-            resampled = response_data["resampled"] if "resampled" in response_data else False
+            resampled = response_data[
+                "resampled"] if "resampled" in response_data else False
 
             # Get the seed
             seed = response_data.get("seed")
@@ -357,11 +373,12 @@ class PropertyRunner:
             print(f"    Error updating flowchart response properties: {e}")
             return False
 
-    def _process_flowchart_node_properties(self, prompt_index: str,
-                                           node_property_checker_names: List[str]):
+    def _process_flowchart_node_properties(
+            self, prompt_index: str, node_property_checker_names: List[str]):
         """Recompute and update node property checkers in the flowchart."""
-        print(f"\nProcessing node property checkers for prompt: {prompt_index}")
-        
+        print(
+            f"\nProcessing node property checkers for prompt: {prompt_index}")
+
         base_config_name = self.config._name_
         f_config_name = self.config.f._name_
 
@@ -387,7 +404,9 @@ class PropertyRunner:
             if checker_name in registry:
                 node_checkers[checker_name] = registry[checker_name]()
             else:
-                print(f"  Warning: Node property checker {checker_name} not found in registry")
+                print(
+                    f"  Warning: Node property checker {checker_name} not found in registry"
+                )
 
         if not node_checkers:
             print("  No valid node property checkers found")
@@ -398,7 +417,7 @@ class PropertyRunner:
             cluster_key = list(node_obj.keys())[0]
             node_data = node_obj[cluster_key]
             sentences_data = node_data.get("sentences", [])
-            
+
             if not sentences_data:
                 continue
 
@@ -415,13 +434,15 @@ class PropertyRunner:
 
             for checker_name, checker in node_checkers.items():
                 if checker_name == "multi_algorithm":
-                    values = checker.get_value_for_node(unique_sentences, prompt_index)
+                    values = checker.get_value_for_node(
+                        unique_sentences, prompt_index)
                 else:
                     values = checker.get_value_for_node(unique_sentences)
-                
+
                 for idx, sentence_text in enumerate(unique_sentences):
                     if idx < len(values):
-                        sentence_map[sentence_text].append((checker_name, values[idx]))
+                        sentence_map[sentence_text].append(
+                            (checker_name, values[idx]))
 
             for sentence_item in sentences_data:
                 sentence_text = sentence_item.get("text", "")
@@ -433,7 +454,8 @@ class PropertyRunner:
 
         if updated_nodes > 0:
             write_json(flowchart_path, flowchart_data)
-            print(f"  Updated {updated_nodes} nodes with node property checkers")
+            print(
+                f"  Updated {updated_nodes} nodes with node property checkers")
         else:
             print("  No nodes needed updating")
 
@@ -443,11 +465,11 @@ class PropertyRunner:
         """Process multiple files in parallel batches for property checkers that support it."""
         if not file_paths:
             return
-        
+
         # Separate checkers into those that support parallel processing and those that don't
         parallel_checkers = []
         sequential_checkers = []
-        
+
         for checker_name in property_checker_names:
             if checker_name in self.property_checkers:
                 checker = self.property_checkers[checker_name]
@@ -457,11 +479,11 @@ class PropertyRunner:
                     sequential_checkers.append(checker_name)
             else:
                 sequential_checkers.append(checker_name)
-        
+
         # Load all files once
         file_data_map = {}
         files_to_process = []
-        
+
         for file_path in file_paths:
             try:
                 response_data = load_json(file_path)
@@ -469,131 +491,167 @@ class PropertyRunner:
                     # Check if file already has all required properties with valid values
                     if not self.recompute:
                         has_all_properties = all(
-                            prop in response_data and response_data[prop] not in
-                            ["unknown", "None", None, ""]
-                            for prop in property_checker_names
-                        )
+                            prop in response_data and response_data[prop]
+                            not in ["unknown", "None", None, ""]
+                            for prop in property_checker_names)
                         if has_all_properties:
-                            print(f"File already has all properties: {file_path}")
+                            print(
+                                f"File already has all properties: {file_path}"
+                            )
                             continue
-                    
+
                     file_data_map[file_path] = response_data
                     files_to_process.append(file_path)
             except Exception as e:
                 print(f"Error loading {file_path}: {e}")
-        
+
         if not files_to_process:
             print("  No files need processing")
             return
-        
+
         print(f"  Processing {len(files_to_process)} files...")
-        
+
         # Process parallel checkers in batches
         if parallel_checkers:
-            print(f"  Using parallel processing for: {', '.join(parallel_checkers)}")
+            print(
+                f"  Using parallel processing for: {', '.join(parallel_checkers)}"
+            )
             for checker_name in parallel_checkers:
                 checker = self.property_checkers[checker_name]
-                
+
                 # Prepare data for parallel processing
                 response_data_list = []
                 valid_file_paths = []
                 skipped_file_paths = []
-                
+
                 for file_path in files_to_process:
                     response_data = file_data_map[file_path]
                     cot = response_data.get("cot_content", "")
                     response = response_data.get("response_content", "")
-                    
+
                     # For algorithm and single_algorithm, check if this is a flowchart (skip those in parallel)
-                    if checker_name in ["algorithm", "single_algorithm"] and "flowcharts" in file_path:
+                    if checker_name in ["algorithm", "single_algorithm"
+                                        ] and "flowcharts" in file_path:
                         # Skip flowcharts in parallel processing, handle them sequentially
                         skipped_file_paths.append(file_path)
                         continue
-                    
+
                     # Only process if there's content
                     if cot or response:
                         response_data_list.append(response_data)
                         valid_file_paths.append(file_path)
-                    
+
                 # Store skipped files for later sequential processing
                 if not hasattr(self, '_skipped_files'):
                     self._skipped_files = {}
                 if checker_name not in self._skipped_files:
                     self._skipped_files[checker_name] = []
                 self._skipped_files[checker_name].extend(skipped_file_paths)
-                
+
                 if response_data_list:
                     # Process in batches of 75
                     batch_size = 75
                     total_files = len(response_data_list)
-                    print(f"    Processing {total_files} files with {checker_name} in batches of {batch_size}...")
-                    
+                    print(
+                        f"    Processing {total_files} files with {checker_name} in batches of {batch_size}..."
+                    )
+
                     for batch_start in range(0, total_files, batch_size):
                         batch_end = min(batch_start + batch_size, total_files)
                         batch_data = response_data_list[batch_start:batch_end]
                         batch_paths = valid_file_paths[batch_start:batch_end]
-                        
-                        print(f"      Processing batch {batch_start // batch_size + 1} ({len(batch_data)} files)...")
+
+                        print(
+                            f"      Processing batch {batch_start // batch_size + 1} ({len(batch_data)} files)..."
+                        )
                         try:
-                            results = checker.process_responses_parallel(batch_data, prompt_index)
-                            
+                            results = checker.process_responses_parallel(
+                                batch_data, prompt_index)
+
                             # Update results back to file data
                             for i, file_path in enumerate(batch_paths):
                                 if i < len(results):
-                                    file_data_map[file_path][checker_name] = results[i]
-                                    print(f"        {checker_name} for {os.path.basename(file_path)}: {results[i]}")
+                                    file_data_map[file_path][
+                                        checker_name] = results[i]
+                                    print(
+                                        f"        {checker_name} for {os.path.basename(file_path)}: {results[i]}"
+                                    )
                         except Exception as e:
-                            print(f"      Error in parallel processing batch for {checker_name}: {e}")
+                            print(
+                                f"      Error in parallel processing batch for {checker_name}: {e}"
+                            )
                             # Fall back to sequential for this batch
                             for file_path in batch_paths:
                                 try:
                                     response_data = file_data_map[file_path]
-                                    value = checker.get_value(response_data, prompt_index, file_path)
-                                    file_data_map[file_path][checker_name] = value
-                                    print(f"        {checker_name} for {os.path.basename(file_path)}: {value}")
+                                    value = checker.get_value(
+                                        response_data, prompt_index, file_path)
+                                    file_data_map[file_path][
+                                        checker_name] = value
+                                    print(
+                                        f"        {checker_name} for {os.path.basename(file_path)}: {value}"
+                                    )
                                 except Exception as e2:
-                                    print(f"        Error processing {file_path} with {checker_name}: {e2}")
-                                    file_data_map[file_path][checker_name] = "None"
-        
+                                    print(
+                                        f"        Error processing {file_path} with {checker_name}: {e2}"
+                                    )
+                                    file_data_map[file_path][
+                                        checker_name] = "None"
+
         # Process sequential checkers one by one, and any parallel checkers that were skipped
         # Check for any parallel checkers that have files that were skipped (e.g., flowcharts for single_algorithm)
         if hasattr(self, '_skipped_files'):
             for checker_name in parallel_checkers:
-                if checker_name in self._skipped_files and self._skipped_files[checker_name]:
+                if checker_name in self._skipped_files and self._skipped_files[
+                        checker_name]:
                     checker = self.property_checkers[checker_name]
                     unprocessed_files = self._skipped_files[checker_name]
-                    
+
                     # Process skipped files sequentially for this checker
-                    print(f"  Processing {len(unprocessed_files)} skipped files sequentially for {checker_name}...")
+                    print(
+                        f"  Processing {len(unprocessed_files)} skipped files sequentially for {checker_name}..."
+                    )
                     for file_path in unprocessed_files:
                         if file_path in file_data_map:
                             response_data = file_data_map[file_path]
                             if checker_name not in response_data:  # Only process if not already set
                                 try:
-                                    value = checker.get_value(response_data, prompt_index, file_path)
+                                    value = checker.get_value(
+                                        response_data, prompt_index, file_path)
                                     response_data[checker_name] = value
-                                    print(f"      {checker_name} for {os.path.basename(file_path)}: {value}")
+                                    print(
+                                        f"      {checker_name} for {os.path.basename(file_path)}: {value}"
+                                    )
                                 except Exception as e:
-                                    print(f"      Error processing {os.path.basename(file_path)} with {checker_name}: {e}")
+                                    print(
+                                        f"      Error processing {os.path.basename(file_path)} with {checker_name}: {e}"
+                                    )
                                     response_data[checker_name] = "None"
             # Clear skipped files for next batch
             self._skipped_files = {}
-        
+
         if sequential_checkers:
-            print(f"  Using sequential processing for: {', '.join(sequential_checkers)}")
+            print(
+                f"  Using sequential processing for: {', '.join(sequential_checkers)}"
+            )
             for file_path in files_to_process:
                 response_data = file_data_map[file_path]
                 for checker_name in sequential_checkers:
                     if checker_name in self.property_checkers:
                         checker = self.property_checkers[checker_name]
                         try:
-                            value = checker.get_value(response_data, prompt_index, file_path)
+                            value = checker.get_value(response_data,
+                                                      prompt_index, file_path)
                             response_data[checker_name] = value
-                            print(f"      {checker_name} for {os.path.basename(file_path)}: {value}")
+                            print(
+                                f"      {checker_name} for {os.path.basename(file_path)}: {value}"
+                            )
                         except Exception as e:
-                            print(f"      Error processing {os.path.basename(file_path)} with {checker_name}: {e}")
+                            print(
+                                f"      Error processing {os.path.basename(file_path)} with {checker_name}: {e}"
+                            )
                             response_data[checker_name] = "None"
-        
+
         # Save all updated files
         for file_path in files_to_process:
             try:

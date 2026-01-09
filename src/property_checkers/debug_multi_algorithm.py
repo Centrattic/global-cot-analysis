@@ -10,23 +10,34 @@ class PropertyCheckerDebugMultiAlgorithm(PropertyCheckerMulti):
     def __init__(self, max_workers: int = 250):
         super().__init__("debug_multi_algorithm")
         self.max_workers = max_workers
-        
+
         self.cues_A: List[str] = ["Frontend API Request", "Hypothesis A"]
-        self.cues_B: List[str] = ["Backend Database Write", "Write issue", "Hypothesis B"]
-        self.cues_C: List[str] = ["browser network console", "browser's network console", "failed requests", "Option C"]
+        self.cues_B: List[str] = [
+            "Backend Database Write", "Write issue", "Hypothesis B"
+        ]
+        self.cues_C: List[str] = [
+            "browser network console", "browser's network console",
+            "failed requests", "Option C"
+        ]
         self.cues_D: List[str] = ["test script", "Option D", "API endpoint"]
-        self.cues_E: List[str] = ["database server logs", "Option E", "database logs", "write errors"]
-        self.cues_F: List[str] = ["data transformation layer", "Option F", "data corruption"]
+        self.cues_E: List[str] = [
+            "database server logs", "Option E", "database logs", "write errors"
+        ]
+        self.cues_F: List[str] = [
+            "data transformation layer", "Option F", "data corruption"
+        ]
 
     def _load_algorithms(self, prompt_index: str) -> dict:
         algorithms_path = Path("prompts/algorithms.json")
         with open(algorithms_path, 'r') as f:
             algorithms_data = json.load(f)
         if prompt_index not in algorithms_data:
-            raise ValueError(f"No algorithms found for prompt index: {prompt_index}")
+            raise ValueError(
+                f"No algorithms found for prompt index: {prompt_index}")
         return algorithms_data[prompt_index]
 
-    def _first_index_with_any(self, sentences: List[str], patterns: List[str]) -> int:
+    def _first_index_with_any(self, sentences: List[str],
+                              patterns: List[str]) -> int:
         """Return 1-indexed first sentence index that contains any pattern (case-insensitive), or 0 if none."""
         lowered_patterns = [p.lower() for p in patterns]
         for i, s in enumerate(sentences, start=1):
@@ -58,7 +69,7 @@ class PropertyCheckerDebugMultiAlgorithm(PropertyCheckerMulti):
         Returns "None" if undecidable (no cues found).
         """
         algorithm_labels = list(self._get_cues_map().keys())
-        
+
         current_alg: str = ""
         initial_alg: str = ""
         boundaries: List[int] = []
@@ -66,7 +77,7 @@ class PropertyCheckerDebugMultiAlgorithm(PropertyCheckerMulti):
 
         for idx, s in enumerate(sentences, start=1):
             alg_cues_found = {}
-            
+
             for alg in algorithm_labels:
                 cues = self._get_cues_for_algorithm(alg)
                 if not cues:
@@ -74,7 +85,8 @@ class PropertyCheckerDebugMultiAlgorithm(PropertyCheckerMulti):
                 has_cue = any(p in s for p in cues)
                 if has_cue:
                     positions = [s.find(p) for p in cues if p in s]
-                    alg_cues_found[alg] = min(positions) if positions else len(s) + 1
+                    alg_cues_found[alg] = min(
+                        positions) if positions else len(s) + 1
 
             if not alg_cues_found:
                 continue
@@ -100,7 +112,8 @@ class PropertyCheckerDebugMultiAlgorithm(PropertyCheckerMulti):
 
         return_string = f"[\"{initial_alg}\""
         for i in range(len(boundaries)):
-            if i > 0 and boundaries[i] - boundaries[i-1] > 0: # this is hard, just include all for now
+            if i > 0 and boundaries[i] - boundaries[
+                    i - 1] > 0:  # this is hard, just include all for now
                 return_string += f", {boundaries[i]}, \"{alg_sequence[i+1]}\""
         return_string += "]"
         return return_string
@@ -118,10 +131,10 @@ class PropertyCheckerDebugMultiAlgorithm(PropertyCheckerMulti):
         """
         algorithm_labels = list(self._get_cues_map().keys())
         result = []
-        
+
         for s in sentences:
             found_algorithms = []
-            
+
             for alg in algorithm_labels:
                 cues = self._get_cues_for_algorithm(alg)
                 if not cues:
@@ -129,9 +142,9 @@ class PropertyCheckerDebugMultiAlgorithm(PropertyCheckerMulti):
                 has_cue = any(p in s for p in cues)
                 if has_cue:
                     found_algorithms.append(alg)
-            
+
             result.append(found_algorithms)
-        
+
         return result
 
     def get_value(self,
@@ -146,9 +159,8 @@ class PropertyCheckerDebugMultiAlgorithm(PropertyCheckerMulti):
             if resampled is None or "resampled" not in response_data:
                 return "None"
 
-        _ = self._load_algorithms(prompt_index) # they must exist
+        _ = self._load_algorithms(prompt_index)  # they must exist
         sentences = response_data.get("chunked_cot_content", [])
         result = self._heuristic_keywords_output(sentences)
         print(f"    DEBUG: Heuristic output list: {result}")
         return result
-

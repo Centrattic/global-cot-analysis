@@ -11,7 +11,6 @@ import os
 
 from src.utils.json_utils import load_json, write_json
 from src.utils.file_utils import FileUtils
-from src.flowchart.condense_flowchart import condense_flowchart_file, condense_flowchart_fully_file
 
 
 class GraphvizGenerator:
@@ -214,40 +213,12 @@ class GraphvizGenerator:
         print(f"Updated flowchart with new graph layout at {flowchart_path}")
         return True
 
-    def _sync_property_checkers(self, original_path: str,
-                                condensed_path: str) -> None:
-        """Copy property checker metadata from the original flowchart to the condensed one.
-
-        - Copies the top-level `property_checkers` list
-        - For every rollout in `responses`, copies the fields listed in `property_checkers`
-        """
-        original = load_json(original_path)
-        condensed = load_json(condensed_path)
-
-        if "property_checkers" in original:
-            condensed["property_checkers"] = list(
-                original["property_checkers"])  # keep order
-
-            # Sync per-response tags
-            if "responses" in original and "responses" in condensed:
-                o_responses = original["responses"]
-                c_responses = condensed["responses"]
-                for rid, o_resp in o_responses.items():
-                    if rid in c_responses:
-                        c_resp = c_responses[rid]
-                        for pname in original["property_checkers"]:
-                            if pname in o_resp:
-                                c_resp[pname] = o_resp[pname]
-
-            write_json(condensed_path, condensed)
-
     def generate_graphviz_from_config(self,
                                       config: Dict[str, Any],
                                       recompute: bool = False):
-        """Generate graphviz embeddings for both original and condensed flowcharts.
+        """Generate graphviz embeddings for original flowcharts.
 
         - If either already has graph_layout and recompute=False, skip recomputing that one.
-        - Ensure the condensed file exists; if not, create it.
         """
         if not self._check_graph_layout_service():
             raise RuntimeError(
@@ -255,48 +226,9 @@ class GraphvizGenerator:
             )
 
         prompt_index = config["prompt"]
+        models = config.get("models", [])
         flowchart_path = FileUtils.get_flowchart_file_path(
-            prompt_index, config._name_, config.f._name_)
+            prompt_index, config._name_, config.f._name_, models)
 
         # Original
         self._maybe_generate_layout(flowchart_path, recompute=recompute)
-
-        # Condensed
-        condensed_path = str(
-            Path(flowchart_path).with_name(
-                Path(flowchart_path).stem + "_condensed.json"))
-        if not FileUtils.file_exists(condensed_path):
-            try:
-                print(
-                    f"Condensed flowchart does not exist, creating: {condensed_path}"
-                )
-                out_path = condense_flowchart_file(flowchart_path)
-                print(f"Condensed flowchart written to {out_path}")
-                condensed_path = out_path
-            except Exception as e:
-                print(f"Failed to create condensed flowchart: {e}")
-                return
-
-        # Ensure property checkers are synced from original to condensed
-        self._sync_property_checkers(flowchart_path, condensed_path)
-        self._maybe_generate_layout(condensed_path, recompute=recompute)
-
-        # Fully Condensed (collapse all cycles)
-        fully_condensed_path = str(
-            Path(flowchart_path).with_name(
-                Path(flowchart_path).stem + "_fully_condensed.json"))
-        if not FileUtils.file_exists(fully_condensed_path):
-            try:
-                print(
-                    f"Fully condensed flowchart does not exist, creating: {fully_condensed_path}"
-                )
-                out_path_fc = condense_flowchart_fully_file(flowchart_path)
-                print(f"Fully condensed flowchart written to {out_path_fc}")
-                fully_condensed_path = out_path_fc
-            except Exception as e:
-                print(f"Failed to create fully condensed flowchart: {e}")
-                return
-
-        # Sync property checkers and layout for fully condensed
-        self._sync_property_checkers(flowchart_path, fully_condensed_path)
-        self._maybe_generate_layout(fully_condensed_path)

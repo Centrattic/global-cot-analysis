@@ -77,26 +77,31 @@ class APIResponseGenerator:
                                               config_name, max_workers)
 
     def generate_prefixes_from_config(self,
-                                     config: Dict[str, Any],
-                                     config_name: str = None):
+                                      config: Dict[str, Any],
+                                      config_name: str = None):
         """Generate prefixes from rollouts using config object."""
         prompt_index = config["prompt"]
         models = config["models"]
-        
+
         # Get number of prefixes to generate from rollout config
         num_prefixes_to_generate = config.r.get("num_prefixes_to_generate", 40)
         if num_prefixes_to_generate is None:
-            raise ValueError("num_prefixes_to_generate must be specified in rollout config (r config)")
-        
-        print(f"Generating {num_prefixes_to_generate} prefixes from rollouts for prompt {prompt_index}")
+            raise ValueError(
+                "num_prefixes_to_generate must be specified in rollout config (r config)"
+            )
+
+        print(
+            f"Generating {num_prefixes_to_generate} prefixes from rollouts for prompt {prompt_index}"
+        )
         print(f"Models: {models}")
-        
+
         # Generate prefixes from the first model's rollouts (assumes all models have same rollouts)
         from src.predictions.utils_predictions import generate_prefixes_from_rollouts
         generated_prefix_ids = generate_prefixes_from_rollouts(
-            prompt_index, models[0], num_prefixes_to_generate
+            prompt_index, models[0], num_prefixes_to_generate)
+        print(
+            f"Generated {len(generated_prefix_ids)} prefixes: {generated_prefix_ids}"
         )
-        print(f"Generated {len(generated_prefix_ids)} prefixes: {generated_prefix_ids}")
         return generated_prefix_ids
 
     def generate_resamples_from_config(self,
@@ -115,7 +120,7 @@ class APIResponseGenerator:
         # Load prompt and prefix texts
         prompts_data = load_json("prompts/prompts.json")
         prompt_text = prompts_data[prompt_index]
-        
+
         # Load prefixes.json to get the actual prefix texts
         prefixes_path = f"prompts/{prompt_index}/prefixes.json"
         if not Path(prefixes_path).exists():
@@ -124,11 +129,13 @@ class APIResponseGenerator:
                 "Prefixes must be generated first using the 'prefixes' command or created manually."
             )
         prefixes_data = load_json(prefixes_path)
-        
+
         # Determine which prefixes to use
         # If prefixes are specified in config, use those
         if prefixes and len(prefixes) > 0:
-            print(f"Using {len(prefixes)} prefixes specified in config: {prefixes}")
+            print(
+                f"Using {len(prefixes)} prefixes specified in config: {prefixes}"
+            )
         else:
             # If no prefixes specified in config, use all from prefixes.json
             prefixes = sorted(prefixes_data.keys())

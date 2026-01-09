@@ -3,7 +3,12 @@ Goal:
 
 ToDo:
 * make --recompute flag work for all commands!
-* write a script to automatically generate cue dictionaries
+* write a script to automatically generate cue dictionaries for algorithms and write to algorithms.json
+* Add "models" property checker to check model name
+* make predictions changing parameters easier
+
+* should I let people try using either sentence or llm? Like use just one stage and not both, this could be good
+
 
 ### Config structure
 

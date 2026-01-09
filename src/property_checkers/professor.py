@@ -15,5 +15,5 @@ class PropertyCheckerProfessor(PropertyCheckerBoolean):
         cot_content = response_data.get("cot_content", "")
         if not cot_content:
             return False
-        
+
         return "professor" in cot_content.lower()

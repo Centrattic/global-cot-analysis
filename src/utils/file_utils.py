@@ -38,23 +38,22 @@ class FileUtils:
         return f"prompts/{prompt_index}/{model}/resamples/{prefix_index}/{seed}.json"
 
     @staticmethod
-    def get_flowchart_file_path(prompt_index: str, config_name: str,
-                                f_config_name: str) -> str:
-        """Get path for flowchart file (multi-model)."""
-        return f"flowcharts/{prompt_index}/config-{config_name}-{f_config_name}_flowchart.json"
-
-    @staticmethod
-    def get_activation_file_path(prompt_index: str, model: str, seed: int,
-                                 layer: int) -> str:
-        """Get path for activation file."""
-        return f"embed_cache/{prompt_index}/{model}/rollouts/{seed}_layer_{layer}.npy"
-
-    @staticmethod
-    def get_resample_activation_file_path(prompt_index: str, model: str,
-                                          prefix_index: str, seed: int,
-                                          layer: int) -> str:
-        """Get path for resample activation file."""
-        return f"embed_cache/{prompt_index}/{model}/{prefix_index}/{seed}_layer_{layer}.npy"
+    def get_flowchart_file_path(prompt_index: str,
+                                config_name: str,
+                                f_config_name: str,
+                                models: List[str] = None) -> str:
+        """Get path for flowchart file.
+        
+        If models is provided and has exactly one model, includes model name in filename.
+        Model name is converted: "gpt-oss-20b" -> "gpt_oss_20b"
+        """
+        if models and len(models) == 1:
+            # Convert model name: replace "/" and "-" with "_"
+            model_safe = models[0].replace("/", "_").replace("-", "_")
+            return f"flowcharts/{prompt_index}/config-{config_name}-{f_config_name}_{model_safe}_flowchart.json"
+        else:
+            # No model or multiple models: use original format
+            return f"flowcharts/{prompt_index}/config-{config_name}-{f_config_name}_flowchart.json"
 
     @staticmethod
     def get_graph_cache_file_path(flowchart_path: str) -> str:

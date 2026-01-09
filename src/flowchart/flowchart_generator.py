@@ -10,8 +10,7 @@ from collections import Counter
 
 from src.utils.json_utils import load_json, write_json
 from src.utils.file_utils import FileUtils
-from src.utils.prompt_utils import get_prompt_filter
-from src.clustering import ActivationClusterer, SentenceThenLLMClusterer
+from src.clustering import SentenceThenLLMClusterer
 from src.labeling.cluster_labeler import label_flowchart, load_prompt_text
 from src.property_checkers import PropertyCheckerCorrectness, PropertyCheckerResampled, PropertyCheckerModel, PropertyCheckerAlgorithm, PropertyCheckerSingleAlgorithm, PropertyCheckerProfessor, PropertyCheckerDebugMultiAlgorithm, PropertyCheckerMultiAlgorithm
 
@@ -100,11 +99,7 @@ class FlowchartGenerator:
         """Create the appropriate clusterer based on method in config.f."""
         method = config_f.get("method", "sentence")
 
-        if method == "sentence":
-            return SentenceThenLLMClusterer(config_f)
-        elif method == "activation":
-            return ActivationClusterer(config_f)
-        elif method == "sentence_then_llm":
+        if method == "sentence_then_llm":
             return SentenceThenLLMClusterer(config_f)
         else:
             raise ValueError(f"Unknown clustering method: {method}")
@@ -175,7 +170,7 @@ class FlowchartGenerator:
         """Generate flowchart for a prompt with multiple models."""
 
         flowchart_path = FileUtils.get_flowchart_file_path(
-            prompt_index, config._name_, config.f._name_)
+            prompt_index, config._name_, config.f._name_, models)
 
         if FileUtils.file_exists(flowchart_path):
             print(
@@ -345,8 +340,9 @@ class LabelGenerator:
 
     def generate_labels_from_config(self, config: Dict[str, Any]) -> None:
         prompt_index = config["prompt"]
+        models = config.get("models", [])
         flowchart_path = FileUtils.get_flowchart_file_path(
-            prompt_index, config._name_, config.f._name_)
+            prompt_index, config._name_, config.f._name_, models)
 
         flowchart = load_json(flowchart_path)
 

@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 import numpy as np
 
-from src.utils.json_utils import load_json, write_json
+from src.utils.json_utils import load_json
 
 
 class BaseClusterer(ABC):
@@ -123,26 +123,6 @@ class BaseClusterer(ABC):
         if first_seed in responses:
             return responses[first_seed].get("response_content", "")
         return ""
-
-    def _create_cluster_summary(self, responses: Dict[str, Any],
-                                seeds: List[str]) -> Dict[str, Any]:
-        """Create a summary of the cluster."""
-        if not seeds:
-            return {"size": 0, "correctness_rate": 0.0}
-
-        correct_count = 0
-        total_count = len(seeds)
-
-        for seed in seeds:
-            if seed in responses and responses[seed].get("correctness", False):
-                correct_count += 1
-
-        return {
-            "size":
-            total_count,
-            "correctness_rate":
-            correct_count / total_count if total_count > 0 else 0.0
-        }
 
     def _calculate_mean_similarity(self, responses: Dict[str, Any],
                                    seeds: List[str]) -> float:

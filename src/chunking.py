@@ -21,17 +21,17 @@ def split_into_sentences(text: str) -> list[str]:
     """
     if not text:
         return []
-    
+
     # Normalize newlines: replace one or more newlines with a single newline
     text = re.sub(r'\n+', '\n', text)
-    
+
     sentences = []
     current_sentence = ""
-    
+
     i = 0
     while i < len(text):
         char = text[i]
-        
+
         # Check for sentence-ending punctuation
         if char in '.!?':
             current_sentence += char
@@ -53,11 +53,11 @@ def split_into_sentences(text: str) -> list[str]:
         else:
             current_sentence += char
             i += 1
-    
+
     # Add any remaining text as a sentence
     if current_sentence.strip():
         sentences.append(current_sentence.strip())
-    
+
     # Filter out empty sentences
     return [s for s in sentences if s]
 

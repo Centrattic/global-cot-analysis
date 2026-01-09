@@ -109,16 +109,19 @@ MODEL_CONFIGS = {
                          "<｜end▁of▁sentence｜>"],  # Common response tokens
         activation_hook_config=None,  # No activation hooks for now
         provider="together"),
-    "deepseek-r1-distill-qwen-14b":ModelConfig(
+    "deepseek-r1-distill-qwen-14b":
+    ModelConfig(
         model_name="deepseek/deepseek-r1-distill-qwen-14b",
         thought_tokens=["<think>", "</think>"],  # Common reasoning tokens
         response_tokens=["</think>",
                          "<｜end▁of▁sentence｜>"],  # Common response tokens
         activation_hook_config=None,  # No activation hooks for now
         provider="together"),
-    "qwen3-8b":ModelConfig(
+    "qwen3-8b":
+    ModelConfig(
         model_name="qwen/qwen3-8b",
-        thought_tokens=["<think>", "</think>"],  # Broken prob wrong, copied from above
+        thought_tokens=["<think>",
+                        "</think>"],  # Broken prob wrong, copied from above
         response_tokens=["</think>",
                          "<｜end▁of▁sentence｜>"],  # Common response tokens
         activation_hook_config=None,  # No activation hooks for now

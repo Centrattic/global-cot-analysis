@@ -81,7 +81,8 @@ def call_llm(prompt: str,
             raise RuntimeError(f"Labeler HTTP {status}: {resp.text}")
         data = resp.json()
         choices = data.get('choices')
-        if isinstance(choices, list) and choices and isinstance(choices[0], dict):
+        if isinstance(choices, list) and choices and isinstance(
+                choices[0], dict):
             msg = choices[0].get('message')
             if isinstance(msg, dict) and 'content' in msg:
                 content = msg['content']

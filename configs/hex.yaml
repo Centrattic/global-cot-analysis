@@ -2,12 +2,12 @@ defaults:
   - _self_
   - r: default
   - f: default
-  # - p: default
+  - p: default
 
 _name_: "hex"
 prompt: "hex"
 models: ["gpt-oss-20b"]
-prefixes: []
-property_checkers: ["correctness"]
+prefixes: ["prefix-1", "prefix-2", "prefix-3", "prefix-4", "prefix-5"]
+property_checkers: ["correctness", "resampled"]
 
 command: "rollouts"

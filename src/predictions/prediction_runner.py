@@ -4,19 +4,13 @@ Prediction runner for analyzing rollouts and resamples.
 This module handles running prefix correctness analysis using the "current" method.
 """
 
-import json
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from omegaconf import DictConfig
-from datetime import datetime
 
-from .utils_predictions import (
-    find_flowchart_path, check_resamples_exist,
-    load_flowchart_data, get_clusters_from_rollout,
-    load_prefix_data_from_resamples,
-    calculate_correctness_stats, run_prefix_prediction_comparison,
-    save_comparison_csv, create_comparison_plot,
-    get_config_value, load_prefix_correctness_data)
+from .utils_predictions import (find_flowchart_path, check_resamples_exist,
+                                run_prefix_prediction_comparison,
+                                save_comparison_csv, get_config_value)
 
 
 class PredictionRunner:
@@ -69,24 +63,31 @@ class PredictionRunner:
 
         # Check if flowchart exists
         f_config_name = getattr(self.f_config, '_name_', None)
-        flowchart_path = find_flowchart_path(self.prompt, config_name, f_config_name)
+        flowchart_path = find_flowchart_path(self.prompt, config_name,
+                                             f_config_name, self.models)
         if not flowchart_path:
             print(f"No flowchart found for {model}, skipping predictions")
             return
 
         if self.use_fully_condensed:
-            fc_path = flowchart_path.with_name(flowchart_path.stem + "_fully_condensed.json")
+            fc_path = flowchart_path.with_name(flowchart_path.stem +
+                                               "_fully_condensed.json")
             if fc_path.exists():
                 flowchart_path = fc_path
             else:
-                print(f"Fully condensed flowchart not found at {fc_path}, skipping predictions")
+                print(
+                    f"Fully condensed flowchart not found at {fc_path}, skipping predictions"
+                )
                 return
         elif self.use_condensed:
-            condensed_path = flowchart_path.with_name(flowchart_path.stem + "_condensed.json")
+            condensed_path = flowchart_path.with_name(flowchart_path.stem +
+                                                      "_condensed.json")
             if condensed_path.exists():
                 flowchart_path = condensed_path
             else:
-                print(f"Condensed flowchart not found at {condensed_path}, skipping predictions")
+                print(
+                    f"Condensed flowchart not found at {condensed_path}, skipping predictions"
+                )
                 return
 
         print(f"Found flowchart: {flowchart_path}")
@@ -104,7 +105,9 @@ class PredictionRunner:
         prefixes = getattr(self.config, 'prefixes', None)
         if not prefixes:
             if hasattr(self.config, 'prefixes') and prefixes == []:
-                print("No prefixes specified in config, skipping prefix correctness analysis")
+                print(
+                    "No prefixes specified in config, skipping prefix correctness analysis"
+                )
             return
 
         # Check for resamples
@@ -115,61 +118,14 @@ class PredictionRunner:
 
         print(f"Found resamples directory: {resamples_dir}")
 
-        # Run prefix correctness analysis
-        self._run_prefix_correctness_analysis(resamples_dir, predictions_dir,
-                                              model, config_name,
-                                              flowchart_name)
-
-    def _run_prefix_correctness_analysis(self, resamples_dir: Path,
-                                         predictions_dir: Path, model: str,
-                                         config_name: str,
-                                         flowchart_name: str) -> None:
-        """Run prefix correctness analysis for all prefixes."""
-        output_filename = f"prefix_correctness_analysis_{flowchart_name}.json"
-        output_path = predictions_dir / output_filename
-
-        # Count actual prefix directories
-        prefix_dirs = [
-            d for d in resamples_dir.iterdir()
-            if d.is_dir() and d.name.startswith('prefix-')
-        ]
-        actual_prefix_count = len(prefix_dirs)
-
-        # Always run analysis (overwrite existing files)
-        if output_path.exists():
-            print(f"Overwriting existing prefix correctness analysis: {output_path}")
-
-        print(f"Running prefix correctness analysis...")
-
-        # Load prefix data
-        prefix_data = load_prefix_data_from_resamples(resamples_dir)
-
-        # Analyze all prefixes
-        results = {}
-        for prefix_name, rollouts in prefix_data.items():
-            print(f"Processing {prefix_name} with {len(rollouts)} rollouts...")
-            stats = calculate_correctness_stats(rollouts)
-            results[prefix_name] = stats
-
-        # Save results
-        output_data = {
-            'timestamp': datetime.now().isoformat(),
-            'resamples_directory': str(resamples_dir),
-            'prefix_count': len(results),
-            'results': results
-        }
-
-        with open(output_path, 'w') as f:
-            json.dump(output_data, f, indent=2)
-
-        print(f"Prefix correctness analysis completed: {output_path}")
-        # Run comparison after successful analysis
+        # Run prefix prediction comparison directly (no JSON file needed)
         self._run_prefix_prediction_comparison(predictions_dir, flowchart_name,
-                                               output_path, model)
+                                               resamples_dir, model)
 
-    def _run_prefix_prediction_comparison(
-            self, predictions_dir: Path, flowchart_name: str,
-            prefix_correctness_path: Path, model: str) -> None:
+    def _run_prefix_prediction_comparison(self, predictions_dir: Path,
+                                          flowchart_name: str,
+                                          resamples_dir: Path,
+                                          model: str) -> None:
         """Run comparison between predicted and actual prefix response distributions."""
         # Find the flowchart file
         flowchart_path = None
@@ -187,30 +143,25 @@ class PredictionRunner:
         output_base_name = f"correctness_analysis_{flowchart_name}_method_current_top_rollouts_{self.top_rollouts}"
         if self.size_filter is not None:
             output_base_name += f"_size_filter_{self.size_filter}"
-        
+
         csv_path = predictions_dir / f"{output_base_name}.csv"
-        png_path = predictions_dir / f"{output_base_name}.png"
 
         # Always run comparison (overwrite existing files)
-        if csv_path.exists() and png_path.exists():
-            print(f"Overwriting existing prefix prediction comparison: {csv_path}, {png_path}")
+        if csv_path.exists():
+            print(
+                f"Overwriting existing prefix prediction comparison: {csv_path}"
+            )
 
         print(f"Running prefix prediction comparison...")
 
         # Run the comparison using the 'current' method
         comparison_results = run_prefix_prediction_comparison(
-            str(flowchart_path), str(prefix_correctness_path),
-            self.config._name_, self.top_rollouts, self.size_filter,
-            self.prompt, model)
+            str(flowchart_path), str(resamples_dir), self.config._name_,
+            self.top_rollouts, self.size_filter, self.prompt, model)
 
         # Save results
         save_comparison_csv(comparison_results, str(csv_path))
-        print(f"Comparison CSV saved: {csv_path}")
-
-        total_rollouts = self._get_total_rollouts_from_config()
-        create_comparison_plot(comparison_results, str(png_path), total_rollouts)
-
-        print(f"Prefix prediction comparison completed: {csv_path}, {png_path}")
+        print(f"Prefix prediction comparison completed: {csv_path}")
 
     def _get_total_rollouts_from_config(self) -> int:
         """Get the total number of rollouts from the config file."""
@@ -220,6 +171,7 @@ class PredictionRunner:
         if isinstance(r_config, str):
             # Reference to another config file
             rollout_config_path = f"configs/r/{r_config}.yaml"
-            return get_config_value(rollout_config_path, 'num_seeds_rollouts', 100)
+            return get_config_value(rollout_config_path, 'num_seeds_rollouts',
+                                    100)
         else:
             return r_config.get('num_seeds_rollouts', 100) if r_config else 100

@@ -38,10 +38,6 @@ class Cluster:
     def __str__(self):
         return " | ".join(self.sentences)
 
-    def add_sentence(self, sentence: str):
-        """Add a sentence to this cluster."""
-        self.sentences.append(sentence)
-
     def merge_with(self, other: 'Cluster'):
         """Merge another cluster into this one."""
         self.sentences.extend(other.sentences)
@@ -180,8 +176,7 @@ class SentenceThenLLMClusterer(BaseClusterer):
                     sentence_embeddings = response_data.get(
                         "sentence_embeddings", [])
 
-                    if sentence in content and len(
-                            sentence_embeddings) > 0:
+                    if sentence in content and len(sentence_embeddings) > 0:
                         idx = content.index(sentence)
                         if idx < len(sentence_embeddings):
                             embeddings.append(sentence_embeddings[idx])
@@ -284,40 +279,43 @@ class SentenceThenLLMClusterer(BaseClusterer):
             # Create sentence breakdown (without rollout_ids)
             sentences = []
             unique_sentences = list(sentence_counts.keys())
-            
+
             # Get node property checker values if specified
             node_checker_values = {}
             if node_property_checker_names:
                 from src.property_checkers import (
                     PropertyCheckerDebugMultiAlgorithm,
                     PropertyCheckerHexMultiAlgorithm,
-                    PropertyCheckerMultiAlgorithm
-                )
-                
+                    PropertyCheckerMultiAlgorithm)
+
                 # Registry of node property checkers that support get_value_for_node
                 node_checker_registry = {
-                    "debug_multi_algorithm": PropertyCheckerDebugMultiAlgorithm,
+                    "debug_multi_algorithm":
+                    PropertyCheckerDebugMultiAlgorithm,
                     "hex_multi_algorithm": PropertyCheckerHexMultiAlgorithm,
                     "multi_algorithm": PropertyCheckerMultiAlgorithm,
                 }
-                
+
                 # Initialize node property checkers
                 node_checkers = {}
                 for checker_name in node_property_checker_names:
                     if checker_name in node_checker_registry:
-                        node_checkers[checker_name] = node_checker_registry[checker_name]()
-                
+                        node_checkers[checker_name] = node_checker_registry[
+                            checker_name]()
+
                 # Call get_value_for_node on all unique sentences
                 for checker_name, checker in node_checkers.items():
                     if checker_name == "multi_algorithm":
-                        values = checker.get_value_for_node(unique_sentences, prompt_index)
+                        values = checker.get_value_for_node(
+                            unique_sentences, prompt_index)
                     else:
                         values = checker.get_value_for_node(unique_sentences)
                     for idx, sentence in enumerate(unique_sentences):
                         if sentence not in node_checker_values:
                             node_checker_values[sentence] = {}
-                        node_checker_values[sentence][checker_name] = values[idx] if idx < len(values) else []
-            
+                        node_checker_values[sentence][checker_name] = values[
+                            idx] if idx < len(values) else []
+
             for sentence, count in sentence_counts.items():
                 sentence_data = {"text": sentence, "count": count}
                 # Add node property checker values if available
@@ -717,37 +715,6 @@ Cluster 1:
 Cluster 2:
 {cluster2_analysis}"""
 
-        ### old prompt
-        #  prompt = f"""You are an expert at analyzing text clusters. Your task is to determine if two clusters should be merged.
-
-        # IMPORTANT: Only merge if ALL sentences in both clusters represent the SAME FUNDAMENTAL CONCEPT or approach.
-
-        # MERGE the clusters if they represent the SAME CONCEPT, even if:
-        # - They use different specific numbers/values (e.g., "find power of 2 <= 100" vs "find power of 2 <= value")
-        # - They use different wording/phrasing (e.g., "calculate" vs "find" vs "compute")
-        # - They have different levels of detail (e.g., "add numbers" vs "add the two numbers together")
-        # - They use synonyms or different terminology
-
-        # DO NOT MERGE if they represent DIFFERENT CONCEPTS or tasks, even if they seem similar.
-
-        # Examples of what SHOULD be merged:
-        # - "find highest power of 2 <= 419430" and "find highest power of 2 <= value" (same concept, different numbers)
-        # - "add two numbers" and "sum the values" (same concept, different words)
-        # - "convert to binary" and "transform to base 2" (same concept, different terminology)
-
-        # Examples of what should NOT be merged:
-        # - "add numbers" and "multiply numbers" (different operations)
-        # - "find maximum" and "find minimum" (different concepts)
-        # - "sort ascending" and "sort descending" (different directions)
-
-        # Answer with exactly one word: YES or NO.
-
-        # Cluster 1:
-        # {cluster1_analysis}
-
-        # Cluster 2:
-        # {cluster2_analysis}"""
-
         try:
             # Add thread-safe delay
             with self._lock:
@@ -769,7 +736,7 @@ Cluster 2:
             response = requests.post(f"{self.base_url}/chat/completions",
                                      headers=self.headers,
                                      data=json.dumps(payload),
-                                     timeout=120) # 2 minute timeout
+                                     timeout=120)  # 2 minute timeout
 
             response.raise_for_status()
             response_data = response.json()
@@ -781,82 +748,6 @@ Cluster 2:
         except Exception as e:
             print(f"Error in LLM call: {e}")
             return False
-
-    def _merge_connected_components(
-            self, clusters: List[Cluster],
-            merge_decisions: List[Tuple[str, str]]) -> List[Cluster]:
-        """Merge clusters based on connected components from merge decisions."""
-        if not merge_decisions:
-            return clusters
-
-        # Use Union-Find (Disjoint Set Union) for faster connected components
-        cluster_ids = set()
-        for cluster_id1, cluster_id2 in merge_decisions:
-            cluster_ids.add(cluster_id1)
-            cluster_ids.add(cluster_id2)
-
-        # Create Union-Find data structure
-        parent = {cluster_id: cluster_id for cluster_id in cluster_ids}
-
-        def find(x):
-            if parent[x] != x:
-                parent[x] = find(parent[x])  # Path compression
-            return parent[x]
-
-        def union(x, y):
-            px, py = find(x), find(y)
-            if px != py:
-                parent[px] = py
-
-        # Union all connected clusters
-        for cluster_id1, cluster_id2 in merge_decisions:
-            union(cluster_id1, cluster_id2)
-
-        # Group clusters by their root parent
-        components = defaultdict(list)
-        for cluster_id in cluster_ids:
-            root = find(cluster_id)
-            components[root].append(cluster_id)
-
-        components = list(components.values())
-
-        # Create merged clusters
-        merged_clusters = []
-        used_clusters = set()
-
-        # Process connected components
-        for component in components:
-            if len(component) > 1:
-                # Merge multiple clusters
-                main_cluster = None
-                merged_cluster_ids = []
-                for cluster_id in component:
-                    cluster = next((c for c in clusters if c.id == cluster_id),
-                                   None)
-                    if cluster:
-                        if main_cluster is None:
-                            main_cluster = Cluster(
-                                sentences=cluster.sentences.copy(),
-                                id=cluster.id)
-                            merged_cluster_ids.append(cluster_id)
-                        else:
-                            main_cluster.merge_with(cluster)
-                            merged_cluster_ids.append(cluster_id)
-                        used_clusters.add(cluster_id)
-
-                if main_cluster:
-                    main_cluster.merged_from = merged_cluster_ids
-                    merged_clusters.append(main_cluster)
-
-        # Add clusters that weren't merged
-        for cluster in clusters:
-            if cluster.id not in used_clusters:
-                new_cluster = Cluster(sentences=cluster.sentences.copy(),
-                                      id=cluster.id)
-                new_cluster.merged_from = [cluster.id]
-                merged_clusters.append(new_cluster)
-
-        return merged_clusters
 
     def _merge_fully_connected_components(
             self, clusters: List[Cluster],
@@ -1094,109 +985,6 @@ Cluster 2:
             rollout_edges[seed] = edges
 
         return rollout_edges
-
-    def _process_adjacency_row(self, i: int, similarities: np.ndarray,
-                               threshold: float, num_items: int) -> List[int]:
-        """Process one row of adjacency matrix."""
-        return [
-            j for j in range(i + 1, num_items)
-            if similarities[i, j] >= threshold
-        ]
-
-    def _process_adjacency_row_optimized(self, i: int,
-                                         similarities_slice: np.ndarray,
-                                         threshold: float,
-                                         start_idx: int) -> List[int]:
-        """Process one row of adjacency matrix with memory-optimized slice."""
-        return [
-            start_idx + j for j in range(len(similarities_slice))
-            if similarities_slice[j] >= threshold
-        ]
-
-    def _cluster_from_similarities(self,
-                                   similarities: np.ndarray,
-                                   threshold: float,
-                                   n_jobs: int = -1) -> List[int]:
-        """Cluster chunks using pre-computed similarities."""
-        num_items = similarities.shape[0]
-        if num_items == 0:
-            return []
-        if num_items == 1:
-            return [0]
-
-        # Build adjacency list
-        print(f"Building adjacency list using {n_jobs} workers...")
-
-        if n_jobs == 1:
-            adjacency_rows = []
-            for i in tqdm(range(num_items), desc="Building adjacency"):
-                adjacency_rows.append(
-                    self._process_adjacency_row(i, similarities, threshold,
-                                                num_items))
-        else:
-            # Use processes instead of threads for CPU-bound work
-            # Add error handling and fallback
-            try:
-                adjacency_rows = Parallel(
-                    n_jobs=n_jobs,
-                    prefer="processes",
-                    backend="loky",
-                    verbose=1)(delayed(self._process_adjacency_row)(
-                        i, similarities, threshold, num_items)
-                               for i in range(num_items))
-            except Exception as e:
-                print(f"Parallel processing failed: {e}")
-                print("Falling back to single-threaded processing...")
-                adjacency_rows = []
-                for i in tqdm(range(num_items),
-                              desc="Building adjacency (fallback)"):
-                    adjacency_rows.append(
-                        self._process_adjacency_row(i, similarities, threshold,
-                                                    num_items))
-
-        # Build adjacency list with reverse connections
-        adjacency = [[] for _ in range(num_items)]
-        for i, neighbors in enumerate(adjacency_rows):
-            adjacency[i] = neighbors
-            for neighbor in neighbors:
-                adjacency[neighbor].append(i)
-
-        # Debug: print adjacency list
-        print(f"Adjacency list (first 10 nodes):")
-        for i in range(min(10, num_items)):
-            print(f"  Node {i}: {adjacency[i]}")
-
-        # Find connected components using iterative DFS (no recursion)
-        print("Finding connected components using iterative DFS...")
-        visited = [False] * num_items
-        labels = [-1] * num_items
-        current_label = 0
-
-        for start in tqdm(range(num_items), desc="Iterative DFS"):
-            if visited[start]:
-                continue
-
-            # Use iterative DFS with manual stack to avoid recursion limits
-            stack = [start]
-            visited[start] = True
-
-            while stack:
-                node = stack.pop()
-                labels[node] = current_label
-
-                # Process all neighbors at once (more cache-friendly)
-                for neighbor in adjacency[node]:
-                    if not visited[neighbor]:
-                        visited[neighbor] = True
-                        stack.append(neighbor)
-
-            current_label += 1
-
-        # Debug: print cluster labels
-        print(f"Final cluster labels: {labels}")
-        print(f"Number of unique clusters: {len(set(labels))}")
-
-        return labels
 
     def _cluster_by_cosine_similarity(self,
                                       embeddings: np.ndarray,
