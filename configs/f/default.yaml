@@ -1,0 +1,25 @@
+_name_: "default"
+
+num_seeds_rollouts: 50
+num_seeds_prefixes: 10 # 10 per prefix
+sentence_embedding_model: "sentence-transformers/paraphrase-mpnet-base-v2"
+method: "sentence_then_llm" # remove, this is the only method now
+
+sentences_instead_of_chunks: false  # whether to use sentences or chunks
+
+# Sentence clustering settings (adjacency graph + connected components)
+sentence_similarity_threshold: 0.75  # Cosine similarity threshold for adjacency graph
+n_jobs: -1  # Number of parallel jobs (-1 uses all CPUs)
+
+# LLM clustering settings (for sentence_then_llm method)
+llm_model: "openai/gpt-4o-mini"
+llm_cluster_threshold: 0.75
+gamma: 0.5
+max_workers: 100  # Number of parallel LLM calls
+request_delay: 0.01  # Delay between requests (seconds)
+
+# DELETE ALL THEEESE
+# Activation clustering settings (for activation method)
+# layer: 20
+# token_position: -1
+# activation_similarity_threshold: 0.85  # Cosine similarity threshold for activation clustering

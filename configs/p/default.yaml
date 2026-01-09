@@ -1,0 +1,11 @@
+_name_: "default"
+
+# Prediction analysis parameters
+method: "default"
+top_rollouts: 20  # Number of top-scoring rollouts to use for prediction
+
+# Scoring parameters
+beta: 0  # Weight between matching score and entropy: 0 = fully entropy-weighted (1.0 - entropy), 1 = ignores entropy (always 1.0)
+weigh: true  # If true, aggregate answers by weighted scores; if false, use unweighted fraction correct/incorrect
+strict: false  # If true, require exact positional matching; if false, allow subsequence matching (LCS)
+sliding: true  # If true, slide window across rollout sequence; if false, only check first position (s=0)

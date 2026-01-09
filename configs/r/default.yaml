@@ -1,0 +1,10 @@
+_name_: "default"
+
+num_seeds_rollouts: 50 # rename 
+num_seeds_prefixes: 10 # trials over prefixes
+max_workers: 250
+
+# Number of prefixes to generate when running the 'prefixes' command
+num_prefixes_to_generate: 5
+
+# they can study the rollouts, and then see the resamples and how they're different from the rollouts on the graphs maybe

@@ -1,1 +1,297 @@
-# global-cot-analysis
+Goal: 
+
+
+ToDo:
+* make --recompute flag work for all commands!
+* write a script to automatically generate cue dictionaries
+
+### Config structure
+
+uv pip install scikit-learn
+
+Each flowchart should be associated with a new config, that could reuse existing f/r configs. If you want to change things in f/r configs (ex. num rollouts in the flowchart, or clustering method), create a new f/r config.
+
+If you want to switch prompt, models, prefixes, property_checkers, create a new config file in configs/ or in some cases, you can use an override (covered later). For changing command, definitely use an override.
+
+
+### To view existing results, head to vercel page.
+
+
+
+```yaml
+defaults:
+  - _self_
+  - r: test
+  - f: test
+  - p: test
+  
+_name_: "binary_digits_test"
+prompt: "prompt-0"
+models: ["gpt-oss-20b"]
+prefixes: [prefix-0]
+property_checkers: ["correctness", "resampled"]
+
+command: "rollouts"
+```
+
+### Some notes
+- **IMPORTANT:** very much avoid deleting config files if flowcharts have been made with them, since flowchart naming includes the config name, so it's hard to track how it was made if the config is deleted
+- If you want to rerun some seeds, just delete them from the summary file (don't worry about deleting particular jsons, they will just be overwritten)
+- We only use multiruns for prompts, models and prefixes (of which there can be multiple on a graph, are just looped over)
+
+### To run various functionality 
+
+Everything can be run from main.py. For getting responses, you should probably use the api method (specified in the configs/r configs). You could use local model method as well, in which case activations are extracted during generation and you don't have to run activation extraction later.
+
+#### To run rollouts/resamples
+
+```bash
+python -m src.main --config-name=binary_digits_test command=rollouts
+
+python3 -m src.main --config-name=compute_bases_test command=rollouts
+python3 -m src.main --config-name=icecube_tinytest command=rollouts
+
+```
+
+```bash
+python -m src.main --config-name=binary_digits_test command=resamples
+```
+
+#### To extract activations (if using api response generation method)
+
+```bash
+python -m src.main --config-name=binary_digits_test command=extract-activations
+```
+
+#### To create flowcharts
+
+Before this, you must have graph layout service started.
+
+
+```python
+cd graph_layout_service
+python3 -m uvicorn app:app --host 127.0.0.1 --port 8010 --reload
+```
+
+For Riya (who installed pygraphviz in weird way): 
+
+```python
+cd graph_layout_service
+export LD_LIBRARY_PATH=~/local/lib:$LD_LIBRARY_PATH && python -m uvicorn app:app --host 127.0.0.1 --port 8010 --reload
+```
+```bash
+python3 -m src.main --config-name=prompt6_predictive command=graphviz
+
+
+python -m src.main --config-name=prompt6_50 command=sentence_predictions; python -m src.main --config-name=prompt6_100 command=sentence_predictions; python -m src.main --config-name=prompt6_250 command=sentence_predictions; python -m src.main --config-name=prompt6_500 command=sentence_predictions; python -m src.main --config-name=prompt6_500 command=chunking_predictions; python -m src.main --config-name=prompt6_250 command=chunking_predictions; python -m src.main --config-name=prompt6_100 command=chunking_predictions; python -m src.main --config-name=prompt6_50 command=chunking_predictions
+
+python -m src.main --config-name=prompt6_750 command=flowcharts
+python -m src.main --config-name=prompt6_1000 command=flowcharts
+
+python3 -m src.main --config-name=claude_eval_aware command=graphviz
+python3 -m src.main --config-name=sisters_smalltest command=flowcharts
+
+python3 -m src.main --config-name=hex_alg_label command=graphviz
+```
+
+#### To run predictions
+
+Running the below command without any prefixes run, will just save the txt file that allows you to view prefixes. 
+
+```bash
+python3 -m src.main --config-name=icecube_tinytest command=predictions
+```
+
+Then, once you select and add prefixes to the prefixes.json and config, you should run resamples with those prefixes.
+
+```bash
+python3 -m src.main --config-name=icecube_tinytest command=resamples
+```
+
+Once you have run resamples, now you can run predictions again to produce a file that computes the class percentages for the resmapled prefixes, and then (soon) will save a plot showing ground truth vs. predicted. 
+
+All files/plots will be saved in prompts/{prompt-index}/model.
+
+#### To run baseline predictions
+
+The sentence and chunking baselines use separate commands (not the regular `predictions` command):
+
+**Sentence baseline:**
+```bash
+python -m src.main --config-name=well command=sentence_predictions
+```
+
+**Chunking baseline:**
+```bash
+python -m src.main --config-name=well command=chunking_predictions
+```
+
+These will save results to `prompts/{prompt}/{model}/predictions/sentence_baseline/` and `prompts/{prompt}/{model}/predictions/chunking_baseline/` respectively.
+
+```bash
+python3 -m src.main --config-name=bagel_100 command=gemini_predictions
+```
+
+#### To run property checkers
+
+Apply all configured property checkers to existing rollout and resample JSON files, as well as flowchart files. This is useful for adding new property checkers to existing data without regenerating responses.
+
+```bash
+python3 -m src.main --config-name=icecube_tinytest command=properties
+```
+
+This will process all JSON files in both the rollouts directory and all subdirectories of the resamples directory for each model specified in the config, as well as all flowchart files in the flowcharts directory. The property checkers defined in the `property_checkers` list will be applied, and the updated files will be saved back to disk with the new property values.
+
+To force recomputation of all properties (even if they already exist), use the `--recompute` flag. This recomputes for all properties. If you want to recompute only for properties which are currently set to "None," (especially useful for the algorithm property), you don't need the --reocmpute flag.
+
+```bash
+python3 -m src.main --config-name=icecube_tinytest command=properties --recompute
+```
+
+For flowcharts, the system will:
+- Check the `resampled` field in each response
+- Skip responses where `resampled` field is missing or `None`
+- If `resampled` is `false`, look for the source file in `rollouts/{seed}.json`
+- If `resampled` is a prefix string, look for the source file in `resamples/{prefix}/{seed}.json`
+- Update the flowchart response properties with the values from the source file
+
+
+#### To extract top n-grams from a flowchart
+
+Compute the top-k overlapping n-grams of cluster IDs across all rollouts in a flowchart, ranked by total frequency and by class-specific scores for a given property checker. Results are printed and written to `flowcharts/ngrams/{basename}_{prop_check}_{n}_{k}.txt`.
+
+```bash
+python -m src.flowchart.top_ngrams flowcharts/sisters/config-sisters_smalltest-smalltest_with_llm_.9_gamma.5_flowchart.json --n 3 --k 10 --prop_check correctness
+```
+
+If `n` exceeds the longest rollout length, it prints `n is too big` and does not write a file.
+
+
+### Advanced features
+
+#### Overrides
+
+To override, just specify the config value when running main.py. Like:
+
+```bash
+# Run with a different prompt index
+python -m src.main --config-name=binary_digits_test command=responses prompt=prompt-1
+```
+```bash
+# Run with the "local" method for response generation
+python -m src.main --config-name=binary_digits_test command=responses r.method=local
+```
+
+However, overrides are not preferred, since it makes it harder to track which config you actually used for something (though hydra does store outputs/ by timestamp, so you could theoretically compare timestamp of the artefacts you create, like response json files, to that output). Instead of overrides, just create new configs. 
+
+#### Multiruns
+
+This, I think, is very useful. Mainly use this to run multiple commands in one line, like both responses and rollouts, or run over multiple prompts at once, or try out different chunk clustering methods. For running over multiple models or prefixes, just create a new config (since those are lists in the config). 
+
+```bash
+# Run both rollouts and responses at the same time
+python -m src.main --config-name=binary_digits --multirun command=rollouts,responses 
+
+# Run with multiple clustering methods
+python -m src.main --config-name=binary_digits --multirun command=rollouts f.method=sentence, sentence_then_llm, activations
+```
+
+### Adding a new prompt:
+- Add a new prompt to prompts/prompts.json
+- Add a new prompt response parser in src/utils/prompt_utils.py and add it to PromptFilters dictionary on line 120
+- Correctness checker???
+
+### Adding a new prefix
+- Add a new prefix to prompts/prefixes.json
+
+### To run the visualization: 
+``` python
+cd deployment
+npm run dev &
+```
+
+Since node positions are precomputed, you now don't need to start the graph visualization service to visualize your flowcharts.
+
+### To test sentence embedder clustering:
+```bash
+python3 -m src.clustering.test_clustering --k 5 --seed 42
+# or choose a flowchart:
+python -m src.clustering.test_clustering --flowchart flowcharts/hex/config-hex_smalltest-smalltest_flowchart.json --k 10
+```
+
+### To test LLM clustering:
+```bash
+python3 -m src.clustering.test_llm_clustering --flowchart flowcharts/hex/config-hex_smalltest-smalltest_with_llm_flowchart.json --clusters 0,3,5,7 --llm_model openai/gpt-4o-mini
+
+python3 -m src.clustering.test_llm_clustering --flowchart flowcharts/sisters/config-sisters_smalltest-smalltest_with_llm_.9_gamma.5_flowchart.json --clusters 30,57,90,141,147,169,179,185,205,212 --llm_model openai/gpt-4o-mini
+```
+
+Use gamma .5 to begin with and lower to .4 if some you see examples of clusters that should be merged.
+
+### To run hyperparameter sweeps 
+
+#### To just run the sweeps with existing prefixes
+
+```bash
+ python run_hyperparameter_sweep.py --base-config prompt6_500 --prompt prompt-6 --model gpt-oss-20b
+```
+
+#### To find more pefixes
+
+```bash
+ python run_hyperparameter_sweep.py --base-config prompt6_500 --prompt prompt-6 --model gpt-oss-20b --prefixes
+```
+
+#### Deploy to Vercel
+
+Only Riya can, since she owns the Vercel project :(
+
+```bash
+cd deployment
+vercel --prod
+```
+
+To merge several clusters in a flowchart:
+```bash
+python scripts/merge_clusters.py {path/to/flowchart/json} --clusters 24 26
+```
+
+### Refine a flowchart (batch merges and cleanup)
+```bash
+python scripts/refine.py {path/to/flowchart.json} --merges '[[1,4],[15,19,5]]'
+# Prints two lines: cluster count before, then after
+# Overwrites the input file and removes any graph_layout
+```
+
+### Export minimal flowchart for Gemini
+```bash
+python3 scripts/gemini_flo.py {path/to/flowchart.json}
+# Writes to a sibling folder: for_gemini/<basename>_for_gemini.json
+# Keeps only nodes with keys like cluster-<n>, and for each retains top 4 sentences
+```
+
+### Prediction sweeps (repeat predictions and aggregate correlations)
+```bash
+python3 scripts/predictions_sweep.py CONFIG_NAME --n 10
+# Example:
+python3 scripts/predictions_sweep.py bagel_2000 --n 50
+```
+- Runs `python3 -m src.main --config-name=CONFIG_NAME command=predictions` N times.
+- Archives per-run artifacts under `prediction_sweeps/CONFIG_TOPROLLOUTS_ALPHA/`:
+  - `pngs/run_{i}__*.png`, `csvs/run_{i}__*.csv`
+- Writes a summary file named `avg_corr_{AVG}_n_{N}` (no extension) containing:
+  - average_correlation_images, run_correlations_images (for plotted responses)
+  - average_correlation_csv, run_correlations_csv (for all responses in CSV)
+- Directory name encodes method params read from the p-config: `{CONFIG}_{top_rollouts}_{alpha}`.
+- If `<flowchart>_fully_condensed.json` exists, a second sweep also runs on the fully-condensed flowchart and saves under `{CONFIG}_{top_rollouts}_{alpha}_fully/` with its own summary.
+- Incremental: existing runs are not recomputed; the sweep resumes to reach N.
+- Shows a simple terminal progress bar as runs execute.
+
+### Recomputing
+Currently, there is a --recompute flag for command=graphviz and command=properties. This will override existing values. Note that properties recompute also updates node properties.
+```bash
+python3 src.main --config-name {} command=graphviz --recompute
+```
+```bash
+python3 src.main --config-name {} command=properties --recompute
+```

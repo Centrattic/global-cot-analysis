@@ -1,0 +1,35 @@
+{
+    "name": "flowchart-visualizer",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "concurrently \"next dev\" \"sleep 3 && npm run ngrok:dev\" \"sleep 5 && npm run ngrok:url\"",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint",
+        "ngrok": "npx ngrok http 3001",
+        "ngrok:dev": "npx ngrok http 3001 --authtoken=${NGROK_TOKEN}",
+        "ngrok:url": "curl -s http://localhost:4040/api/tunnels | python3 -c \"import sys, json; data=json.load(sys.stdin); print(data['tunnels'][0]['public_url']) if data['tunnels'] else print('No tunnels found')\"",
+        "vercel:deploy": "vercel --prod",
+        "vercel:preview": "vercel",
+        "vercel:dev": "vercel dev"
+    },
+    "dependencies": {
+        "d3": "^7.8.5",
+        "next": "14.0.0",
+        "ngrok": "^5.0.0-beta.2",
+        "react": "18.2.0",
+        "react-dom": "18.2.0"
+    },
+    "devDependencies": {
+        "@types/d3": "^7.4.0",
+        "@types/node": "20.0.0",
+        "@types/react": "18.2.0",
+        "@types/react-dom": "18.2.0",
+        "concurrently": "^9.2.1",
+        "eslint": "8.0.0",
+        "eslint-config-next": "14.0.0",
+        "typescript": "5.9.3",
+        "vercel": "^32.0.0"
+    }
+}
