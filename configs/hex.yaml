@@ -9,6 +9,6 @@ _name_: "hex"
 prompt: "hex"
 models: ["gpt-oss-20b"]
 prefixes: ["prefix-1", "prefix-2", "prefix-3", "prefix-4", "prefix-5"]
-property_checkers: ["correctness", "resampled"]
+property_checkers: ["correctness", "resampled", "multi_algorithm"]
 
 command: "rollouts"
