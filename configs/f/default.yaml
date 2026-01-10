@@ -3,6 +3,8 @@ _name_: "default"
 num_seeds_rollouts: 50
 num_seeds_prefixes: 10 # 10 per prefix
 sentence_embedding_model: "sentence-transformers/paraphrase-mpnet-base-v2"
+
+# REMOVE REMOVE REMOVE 
 method: "sentence_then_llm" # remove, this is the only method now
 
 sentences_instead_of_chunks: false  # whether to use sentences or chunks
@@ -16,4 +18,6 @@ llm_model: "openai/gpt-4o-mini"
 llm_cluster_threshold: 0.75
 gamma: 0.5
 max_workers: 100  # Number of parallel LLM calls
+
+# REMOVE REMOVE REMOVE DO YOU NEED REQUEST DELAY?
 request_delay: 0.01  # Delay between requests (seconds)
