@@ -169,12 +169,45 @@ def get_model_provider(model_name: str) -> str:
 
 def parse_cot_content(text: str,
                       model_name: str,
-                      prefix_text: str = None) -> tuple[str, str]:
-    """Parse CoT content from text using model-specific thought tokens."""
+                      prefix_text: str = None,
+                      is_completion: bool = False) -> tuple[str, str]:
+    """Parse CoT content from text using model-specific thought tokens.
+    
+    Args:
+        text: The raw text to parse
+        model_name: The model name (currently only gpt-oss-20b supported)
+        prefix_text: The prefix text to prepend (for forced prefix/resample cases)
+        is_completion: If True, parse using stripped token format from completions endpoint
+    """
     if model_name != "gpt-oss-20b":
         raise ValueError(
             f"parse_cot_content only supports gpt-oss-20b, got: {model_name}")
 
+    # For completions endpoint, tokens are stripped (e.g. "assistantfinal" instead of full tokens)
+    if is_completion:
+        # The completions endpoint strips special tokens, so we look for the simplified pattern
+        # "<|start|>assistant<|channel|>final<|message|>" becomes "assistantfinal" or similar
+        stripped_response_marker = "assistantfinal"
+        
+        cot_content = ""
+        response_content = ""
+        
+        if stripped_response_marker in text:
+            # Everything before the marker is CoT, everything after is response
+            marker_idx = text.find(stripped_response_marker)
+            cot_content = text[:marker_idx].strip()
+            response_content = text[marker_idx + len(stripped_response_marker):].strip()
+        else:
+            # No response marker found - entire text is CoT
+            cot_content = text.strip()
+        
+        # Prepend the prefix if provided
+        if prefix_text:
+            cot_content = prefix_text + cot_content
+        
+        return cot_content, response_content
+
+    # Standard parsing with full special tokens (chat/completions endpoint)
     # Extract chain of thought between "<|channel|>analysis<|message|>" and "<|end|>"
     cot_start = get_thought_tokens(model_name)[0]
     cot_end = get_thought_tokens(model_name)[1]

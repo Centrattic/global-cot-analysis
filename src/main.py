@@ -27,17 +27,19 @@ def main_with_config(cfg: DictConfig,
     if command == "rollouts":
         from src.generation import APIResponseGenerator
         generator = APIResponseGenerator()
-        generator.generate_rollouts_from_config(cfg, cfg.r._name_)
+        generator.generate_rollouts_from_config(cfg, recompute=recompute,)
 
     elif command == "prefixes":
         from src.generation import APIResponseGenerator
         generator = APIResponseGenerator()
-        generator.generate_prefixes_from_config(cfg, cfg.r._name_)
+
+        # Never recompute prefixes, we should only delete these manually
+        generator.generate_prefixes_from_config(cfg)
 
     elif command == "resamples":
         from src.generation import APIResponseGenerator
         generator = APIResponseGenerator()
-        generator.generate_resamples_from_config(cfg, cfg.r._name_)
+        generator.generate_resamples_from_config(cfg, recompute=recompute,)
 
     elif command == "flowcharts":
         from src.flowchart.flowchart_generator import FlowchartGenerator
@@ -52,7 +54,7 @@ def main_with_config(cfg: DictConfig,
     elif command == "graphviz":
         from src.flowchart.graphviz_generator import GraphvizGenerator
         generator = GraphvizGenerator()
-        generator.generate_graphviz_from_config(cfg, recompute=recompute)
+        generator.generate_graphviz_from_config(cfg, recompute=recompute,)
 
     elif command in ("predictions", "prediction"):
         from src.predictions.prediction_runner import PredictionRunner

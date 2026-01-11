@@ -771,77 +771,59 @@ def get_predicted_distribution_for_prefix_current(prefix_text: str,
 def generate_prefixes_from_rollouts(
         prompt: str,
         model: str,
-        num_prefixes: int = 40,
-        content_key: str = "chunked_cot_content") -> List[str]:
+        num_prefixes: int,
+        content_key: str = "chunked_cot_content",) -> List[str]:
     """Generate random prefixes from rollout files and save to prefixes.json."""
     import random
+    from src.utils.file_utils import ensure_dir
 
     prefixes_path = Path(f"prompts/{prompt}/prefixes.json")
 
-    # If prefixes.json already exists, check if we need more prefixes
+    ensure_dir(prefixes_path.parent)
+
     existing_prefixes_data = {}
-    if prefixes_path.exists():
-        try:
-            with open(prefixes_path, 'r') as f:
-                content = f.read().strip()
-                if content:
-                    existing_prefixes_data = json.loads(content)
-                else:
-                    print(
-                        f"Prefixes file exists but is empty. Will generate new prefixes."
-                    )
-        except (json.JSONDecodeError, ValueError) as e:
-            print(
-                f"Error reading prefixes.json: {e}. Will generate new prefixes."
-            )
-            existing_prefixes_data = {}
+
+    with open(prefixes_path, 'r') as f:
+        content = f.read().strip()
+        if content:
+            existing_prefixes_data = json.loads(content)
 
         existing_count = len(existing_prefixes_data)
-        if existing_count >= num_prefixes:
-            print(
-                f"Prefixes file already exists with {existing_count} prefixes (>= {num_prefixes}). Skipping generation."
-            )
-            return list(existing_prefixes_data.keys())
 
         print(
-            f"Prefixes file exists with {existing_count} prefixes, but need {num_prefixes}. Generating {num_prefixes - existing_count} more."
+            f"Prefixes file already exists with {existing_count} prefixes. Adding {num_prefixes} more."
         )
 
-    # Ensure directory exists
-    prefixes_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Path to rollouts directory
     rollouts_dir = Path(f"prompts/{prompt}/{model}/rollouts")
+
     if not rollouts_dir.exists():
         print(f"Rollouts directory not found: {rollouts_dir}")
         return list(
             existing_prefixes_data.keys()) if existing_prefixes_data else []
 
-    # Get all rollout JSON files
     rollout_files = sorted(rollouts_dir.glob("*.json"))
     if not rollout_files:
         print(f"No rollout files found in: {rollouts_dir}")
         return list(
             existing_prefixes_data.keys()) if existing_prefixes_data else []
 
-    # Calculate how many more prefixes we need
-    needed_count = num_prefixes - len(existing_prefixes_data)
+    needed_count = num_prefixes
 
-    # Collect prefix texts from rollouts
     suggested_prefix_texts: List[str] = []
+
     rollout_ids = [f.stem for f in rollout_files]
 
-    # Shuffle for randomness
     random.shuffle(rollout_ids)
 
-    # Track existing prefix texts to avoid duplicates
     existing_texts = set(existing_prefixes_data.values())
 
     for rollout_id in rollout_ids:
+
         if len(suggested_prefix_texts) >= needed_count:
             break
 
         rollout_file_path = rollouts_dir / f"{rollout_id}.json"
+
         if not rollout_file_path.exists():
             continue
 
@@ -854,30 +836,22 @@ def generate_prefixes_from_rollouts(
         if not chunked_sentences:
             continue
 
-        # Randomly select a prefix length (1 to length of chunked sentences)
         if len(chunked_sentences) > 1:
-            prefix_length = random.randint(1, len(chunked_sentences))
+            prefix_length = random.randint(1, len(chunked_sentences),)
         else:
             prefix_length = 1
 
-        # Take the first prefix_length sentences
         prefix_sentences = chunked_sentences[:prefix_length]
         prefix_text = " ".join(prefix_sentences)
 
-        # Skip if this prefix text already exists
         if prefix_text and prefix_text.strip(
         ) and prefix_text not in existing_texts:
             suggested_prefix_texts.append(prefix_text)
             existing_texts.add(prefix_text)
 
-    if not suggested_prefix_texts and not existing_prefixes_data:
-        print(f"No valid prefix texts found from rollouts")
-        return []
-
-    # Start with existing prefixes
     prefixes_obj = dict(existing_prefixes_data)
 
-    # Find the next available prefix index
+    # Determine the next prefix index, as to not overwrite existing ones
     if existing_prefixes_data:
         existing_indices = []
         for pid in existing_prefixes_data.keys():
@@ -891,22 +865,17 @@ def generate_prefixes_from_rollouts(
     else:
         next_idx = 1
 
-    # Add new prefixes
     for txt in suggested_prefix_texts[:needed_count]:
         prefixes_obj[f"prefix-{next_idx}"] = txt
         next_idx += 1
 
-    # Write JSON file
     with open(prefixes_path, 'w') as f:
-        json.dump(prefixes_obj, f, indent=2)
+        json.dump(prefixes_obj, f, indent=2,)
 
-    # Return all prefix IDs
     all_ids = list(prefixes_obj.keys())
-    new_count = len(all_ids) - len(existing_prefixes_data)
-    if new_count > 0:
-        print(
-            f"Generated {new_count} new prefixes. Total: {len(all_ids)} prefixes"
-        )
-    else:
-        print(f"Total: {len(all_ids)} prefixes (no new ones generated)")
+
+    new_count = len(all_ids) - existing_count
+
+    print(f"Total: {len(all_ids)} prefixes ({new_count} new ones generated)")
+
     return all_ids
