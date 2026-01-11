@@ -602,16 +602,15 @@ class APIResponseGenerator:
 
                 # print("Completion text",completion_text)
 
-                split_idx = completion_text.find('assistantfinal')
+                # Use rfind to get the LAST occurrence of assistantfinal (sometimes in middle??)
+                split_idx = completion_text.rfind('assistantfinal')
 
-                cot_content = completion_text[:split_idx]
-                response_content = completion_text[split_idx + len('assistantfinal'):]
-
-                # Parse the completion to extract reasoning and response content
-                # Use is_completion=True since completions endpoint strips special tokens
-                # cot_content, response_content = parse_cot_content(
-                #     completion_text, model, prefix_text=prefix_text, is_completion=True,
-                # )
+                if split_idx == -1: # no marker found
+                    cot_content = completion_text
+                    response_content = ""
+                else:
+                    cot_content = completion_text[:split_idx]
+                    response_content = completion_text[split_idx + len('assistantfinal'):]
 
                 print("Cot content",cot_content)
                 print("Response content",response_content)
