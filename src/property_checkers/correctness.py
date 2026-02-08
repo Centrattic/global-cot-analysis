@@ -5,8 +5,7 @@ from src.utils.prompt_utils import get_prompt_filter
 class PropertyCheckerCorrectness(PropertyCheckerBoolean):
     """Property checker for response correctness."""
 
-    def __init__(self):
-        super().__init__("correctness")
+    registry_name = "correctness"
 
     def get_value(
         self, response_data: dict, prompt_index: str = None, file_path: str = None
@@ -22,6 +21,7 @@ class PropertyCheckerCorrectness(PropertyCheckerBoolean):
 
         filter_instance = get_prompt_filter(prompt_index)
         if not filter_instance:
-            raise ValueError(f"No prompt filter found for prompt {prompt_index}")
+            print(f"No prompt filter found for prompt {prompt_index}, correctness unknown")
+            return None
 
         return filter_instance.is_correct(response_data)

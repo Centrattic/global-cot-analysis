@@ -210,7 +210,7 @@ def generate_algorithms(
 ) -> Dict[str, Any]:
     """Generate algorithms by analyzing rollouts with LLM."""
     print(f"Loading prompt text for '{prompt_index}'...")
-    prompt_text = load_prompt_text("prompts/prompts.json", prompt_index)
+    prompt_text = load_prompt_text(FileUtils.get_prompts_file_path(), prompt_index)
 
     print(f"Loading {num_rollouts} rollouts for model '{model}'...")
     rollouts = load_rollouts(prompt_index, model, num_rollouts)
@@ -275,7 +275,7 @@ def generate_algorithms(
 
 def update_algorithms_json(prompt_index: str, algorithms: Dict[str, Any]):
     """Update algorithms.json with the new algorithms for the given prompt."""
-    algorithms_path = Path("prompts/algorithms.json")
+    algorithms_path = Path(FileUtils.get_algorithms_file_path())
 
     # Load existing algorithms
     if algorithms_path.exists():

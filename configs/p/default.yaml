@@ -2,9 +2,6 @@ _name_: "default"
 
 # Prediction analysis parameters
 
-# REMOVE REMOVE REMOVE
-method: "default"
-
 top_rollouts: 20  # Number of top-scoring rollouts to use for prediction
 
 # Scoring parameters

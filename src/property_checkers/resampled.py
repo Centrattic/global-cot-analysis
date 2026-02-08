@@ -4,8 +4,7 @@ from .base import PropertyCheckerMulti
 class PropertyCheckerResampled(PropertyCheckerMulti):
     """Property checker for resampling information."""
 
-    def __init__(self):
-        super().__init__("resampled")
+    registry_name = "resampled"
 
     def get_value(
         self, response_data: dict, prompt_index: str = None, file_path: str = None

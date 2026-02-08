@@ -2,19 +2,21 @@ from .base import PropertyCheckerMulti
 import json
 from pathlib import Path
 from typing import List, Dict, Any
+from src.utils.file_utils import FileUtils
 
 
 class PropertyCheckerMultiAlgorithm(PropertyCheckerMulti):
     """General multi-algorithm property checker that dynamically reads algorithms and cues from algorithms.json."""
 
+    registry_name = "multi_algorithm"
+
     def __init__(self, max_workers: int = 250):
-        super().__init__("multi_algorithm")
         self.max_workers = max_workers
         self.prompt_index_cache: Dict[str, Dict[str, List[str]]] = {}
 
     def _load_algorithms(self, prompt_index: str) -> dict:
         """Load algorithms for the given prompt index from algorithms.json."""
-        algorithms_path = Path("prompts/algorithms.json")
+        algorithms_path = Path(FileUtils.get_algorithms_file_path())
         with open(algorithms_path, "r") as f:
             algorithms_data = json.load(f)
         if prompt_index not in algorithms_data:

@@ -3,10 +3,13 @@ from typing import Any, Dict
 
 
 class PropertyChecker(ABC):
-    """Base class for all property checkers."""
+    """Base class for all property checkers.
 
-    def __init__(self, name: str):
-        self.name = name
+    Subclasses must set `registry_name` as a class attribute (e.g., registry_name = "correctness").
+    This is used for auto-registration in the property checker registry.
+    """
+
+    registry_name: str = ""
 
     @abstractmethod
     def get_value(self, response_data: Dict[str, Any], prompt_index: str = None) -> Any:
@@ -17,14 +20,10 @@ class PropertyChecker(ABC):
 class PropertyCheckerBoolean(PropertyChecker):
     """Base class for boolean property checkers."""
 
-    def __init__(self, name: str):
-        super().__init__(name)
-        self.type = "bool"
+    type = "bool"
 
 
 class PropertyCheckerMulti(PropertyChecker):
     """Base class for multi-value property checkers."""
 
-    def __init__(self, name: str):
-        super().__init__(name)
-        self.type = "multi"
+    type = "multi"

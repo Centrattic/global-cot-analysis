@@ -5,6 +5,7 @@ Graphviz generator that creates graph layout embeddings for existing flowcharts.
 
 from pathlib import Path
 from typing import Dict, Any, List
+import random
 import requests
 import time
 import os
@@ -196,13 +197,25 @@ class GraphvizGenerator:
         print(f"Updated flowchart with new graph layout at {flowchart_path}")
         return True
 
+    def _generate_random_layout(self, flowchart):
+        """Generate random positions as fallback when layout service is unavailable."""
+        print("WARNING: Using random layout fallback. Layout will be messy.")
+        print("For better results, start the layout service: cd graph_layout_service && python -m uvicorn app:app --host 127.0.0.1 --port 8010 --reload")
+        positions = {}
+        for node_obj in flowchart.get("nodes", []):
+            cluster_key = list(node_obj.keys())[0]
+            positions[cluster_key] = {"x": random.random(), "y": random.random()}
+        positions["START"] = {"x": random.random(), "y": random.random()}
+        # Add response nodes
+        for seed, rollout_info in flowchart.get("responses", {}).items():
+            for edge in rollout_info.get("edges", []):
+                for node_id in [edge.get("node_a", ""), edge.get("node_b", "")]:
+                    if node_id.startswith("response-") and node_id not in positions:
+                        positions[node_id] = {"x": random.random(), "y": random.random()}
+        return positions
+
     def generate_graphviz_from_config(self, config: Dict[str, Any], recompute: bool = False):
         """Generate graphviz embeddings for original flowcharts."""
-        if not self._check_graph_layout_service():
-            raise RuntimeError(
-                "Graph layout service is not running. Start it with: cd graph_layout_service && python -m uvicorn app:app --host 127.0.0.1 --port 8010 --reload"
-            )
-
         prompt_index = config["prompt"]
         models = config.get("models", [])
         flowchart_path = FileUtils.get_flowchart_file_path(
@@ -212,8 +225,18 @@ class GraphvizGenerator:
             models,
         )
 
-        # Original
-        self._maybe_generate_layout(
-            flowchart_path,
-            recompute=recompute,
-        )
+        service_available = self._check_graph_layout_service()
+        if service_available:
+            self._maybe_generate_layout(
+                flowchart_path,
+                recompute=recompute,
+            )
+        else:
+            # Fallback: generate random layout inline
+            print("Graph layout service unavailable, using random layout fallback")
+            flowchart = load_json(flowchart_path)
+            if flowchart:
+                graph_layout = self._generate_random_layout(flowchart)
+                flowchart["graph_layout"] = graph_layout
+                write_json(flowchart_path, flowchart)
+                print(f"Saved random layout to {flowchart_path}")

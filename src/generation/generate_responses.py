@@ -28,10 +28,7 @@ from src.utils.json_utils import (
 from src.utils.file_utils import FileUtils
 from src.utils.config_manager import ConfigManager
 from src.utils.summary_manager import SummaryManager
-from src.property_checkers import (
-    PropertyCheckerCorrectness,
-    PropertyCheckerResampled,
-)
+from src.property_checkers import PROPERTY_CHECKER_REGISTRY
 from src.chunking import (
     chunk,
     split_into_sentences,
@@ -52,8 +49,7 @@ class APIResponseGenerator:
         self.config_manager = config_manager or ConfigManager()
         self.summary_manager = SummaryManager()
         self.property_checkers = {
-            "correctness": PropertyCheckerCorrectness(),
-            "resampled": PropertyCheckerResampled(),
+            name: cls() for name, cls in PROPERTY_CHECKER_REGISTRY.items()
         }
         self._setup_api_clients()
 
@@ -88,7 +84,7 @@ class APIResponseGenerator:
         )
         config_name = config.r._name_
 
-        prompts_data = load_json("prompts/prompts.json")
+        prompts_data = load_json(FileUtils.get_prompts_file_path())
         prompt_text = prompts_data[prompt_index]
 
         print(f"Generating {num_seeds} rollouts for prompt {prompt_index}")
@@ -156,10 +152,10 @@ class APIResponseGenerator:
         num_seeds = config.r["num_seeds_prefixes"]
         max_workers = config.r["max_workers"]
 
-        prompts_data = load_json("prompts/prompts.json")
+        prompts_data = load_json(FileUtils.get_prompts_file_path())
         prompt_text = prompts_data[prompt_index]
 
-        prefixes_path = f"prompts/{prompt_index}/prefixes.json"
+        prefixes_path = FileUtils.get_prefixes_file_path(prompt_index)
         if not Path(prefixes_path).exists():
             raise FileNotFoundError(
                 f"prefixes.json not found at {prefixes_path}. "
@@ -657,7 +653,7 @@ class APIResponseGenerator:
         filter_instance = get_prompt_filter(prompt_index)
 
         if not filter_instance:
-            raise ValueError(f"No prompt filter found for prompt {prompt_index}")
+            return response_content
 
         response_data = {"response_content": response_content}
 

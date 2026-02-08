@@ -13,6 +13,8 @@ import re
 import os
 import yaml
 
+from src.utils.file_utils import FileUtils
+
 
 def load_flowchart_data(flowchart_path: str) -> Dict[str, Any]:
     """Load flowchart data from JSON file."""
@@ -184,7 +186,7 @@ def resolve_p_config_path(config_name: str) -> str | None:
     base = os.path.basename(config_name)
     if base.lower().endswith((".yaml", ".yml")):
         base = base.rsplit(".", 1)[0]
-    top_path = f"configs/{base}.yaml"
+    top_path = FileUtils.get_config_file_path(base)
     if not os.path.exists(top_path):
         return None
     with open(top_path, "r") as f:
@@ -197,7 +199,7 @@ def resolve_p_config_path(config_name: str) -> str | None:
             break
     if p_name is None:
         return None
-    p_path = f"configs/p/{p_name}.yaml"
+    p_path = FileUtils.get_p_config_file_path(p_name)
     return p_path if os.path.exists(p_path) else None
 
 
@@ -209,7 +211,7 @@ def find_flowchart_path(
     If models is provided and has exactly one model, will look for model-specific filename first.
     Falls back to non-model-specific filename if not found.
     """
-    flowchart_dir = Path(f"flowcharts/{prompt}")
+    flowchart_dir = Path(FileUtils.get_flowchart_dir(prompt))
 
     if not flowchart_dir.exists():
         return None
@@ -282,7 +284,7 @@ def find_flowchart_path(
 
 def check_resamples_exist(prompt: str, model: str) -> Optional[Path]:
     """Check if resamples directory exists and has prefix directories."""
-    resamples_dir = Path(f"prompts/{prompt}/{model}/resamples")
+    resamples_dir = Path(FileUtils.get_resample_dir(prompt, model))
 
     if not resamples_dir.exists():
         return None
@@ -305,7 +307,7 @@ def get_prefix_from_prefix_name(prefix_name: str, prefix_correctness_data: Dict[
     parts = Path(resamples_dir).parts
     if len(parts) >= 2 and parts[0] == "prompts":
         prompt = parts[1]
-        prefixes_path = Path(f"prompts/{prompt}/prefixes.json")
+        prefixes_path = Path(FileUtils.get_prefixes_file_path(prompt))
         if prefixes_path.exists():
             try:
                 with open(prefixes_path, "r") as f:
@@ -360,12 +362,12 @@ def get_actual_distribution_for_prefix(
 def get_config_prefixes(config_name: str) -> List[str]:
     """Get the list of prefixes specified in the config file."""
     # Try p/ subdirectory first
-    config_path = f"configs/p/{config_name}.yaml"
+    config_path = FileUtils.get_p_config_file_path(config_name)
     prefixes = get_config_value(config_path, "prefixes", [])
 
     if not prefixes:
         # Fallback: try without p/ subdirectory
-        config_path = f"configs/{config_name}.yaml"
+        config_path = FileUtils.get_config_file_path(config_name)
         prefixes = get_config_value(config_path, "prefixes", [])
 
     # If still no prefixes, try to find config by _name_ field
@@ -612,7 +614,7 @@ def get_predicted_distribution_for_prefix_current(
         if exclude_matching_rollouts and excluded_rollout_id is None:
             rollout_text = ""
             if prompt and model:
-                rollout_file = Path(f"prompts/{prompt}/{model}/rollouts/{rid}.json")
+                rollout_file = Path(FileUtils.get_rollout_file_path(prompt, model, rid))
                 if rollout_file.exists():
                     try:
                         with open(rollout_file, "r") as f:
@@ -764,7 +766,7 @@ def generate_prefixes_from_rollouts(
     import random
     from src.utils.file_utils import ensure_dir
 
-    prefixes_path = Path(f"prompts/{prompt}/prefixes.json")
+    prefixes_path = Path(FileUtils.get_prefixes_file_path(prompt))
 
     ensure_dir(prefixes_path.parent)
 
@@ -781,7 +783,7 @@ def generate_prefixes_from_rollouts(
             f"Prefixes file already exists with {existing_count} prefixes. Adding {num_prefixes} more."
         )
 
-    rollouts_dir = Path(f"prompts/{prompt}/{model}/rollouts")
+    rollouts_dir = Path(FileUtils.get_rollout_dir(prompt, model))
 
     if not rollouts_dir.exists():
         print(f"Rollouts directory not found: {rollouts_dir}")

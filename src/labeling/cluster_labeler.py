@@ -6,6 +6,8 @@ import time
 from dotenv import load_dotenv
 import re
 
+from src.utils.file_utils import FileUtils
+
 LABELS = {
     "Q": "question",
     "A": "answer",
@@ -214,7 +216,7 @@ def load_prompt_text(prompts_json_path: str, prompt_id: str) -> str:
 
 def label_flowchart_file(
     flowchart_path: str,
-    prompts_json_path: str = "prompts/prompts.json",
+    prompts_json_path: str = FileUtils.get_prompts_file_path(),
     max_workers: int | None = None,
 ) -> None:
     with open(flowchart_path, "r", encoding="utf-8") as f:
@@ -238,7 +240,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Add cluster labels to an existing flowchart JSON")
     parser.add_argument("flowchart", type=str, help="Path to flowchart JSON")
     parser.add_argument(
-        "--prompts", type=str, default="prompts/prompts.json", help="Path to prompts.json"
+        "--prompts", type=str, default=FileUtils.get_prompts_file_path(), help="Path to prompts.json"
     )
     parser.add_argument(
         "--max-workers",

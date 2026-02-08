@@ -10,11 +10,7 @@ from collections import defaultdict
 
 from src.utils.json_utils import load_json, write_json
 from src.utils.file_utils import FileUtils
-from src.property_checkers import (
-    PropertyCheckerCorrectness,
-    PropertyCheckerResampled,
-    PropertyCheckerMultiAlgorithm,
-)
+from src.property_checkers import PROPERTY_CHECKER_REGISTRY, PropertyCheckerMultiAlgorithm
 
 
 class PropertyRunner:
@@ -24,9 +20,7 @@ class PropertyRunner:
         self.config = config
         self.recompute = recompute
         self.property_checkers = {
-            "correctness": PropertyCheckerCorrectness(),
-            "resampled": PropertyCheckerResampled(),
-            "multi_algorithm": PropertyCheckerMultiAlgorithm(),
+            name: cls() for name, cls in PROPERTY_CHECKER_REGISTRY.items()
         }
 
     def run_properties_from_config(self, config_name: str):
@@ -62,7 +56,7 @@ class PropertyRunner:
         print(f"\nProcessing model: {model}")
 
         # Construct the rollout directory path
-        rollout_dir = f"prompts/{prompt_index}/{model}/rollouts"
+        rollout_dir = FileUtils.get_rollout_dir(prompt_index, model)
 
         if not os.path.exists(rollout_dir):
             print(f"Rollout directory not found: {rollout_dir}")
@@ -85,7 +79,7 @@ class PropertyRunner:
         print(f"\nProcessing resamples for model: {model}")
 
         # Construct the resamples directory path
-        resamples_dir = f"prompts/{prompt_index}/{model}/resamples"
+        resamples_dir = FileUtils.get_resample_dir(prompt_index, model)
 
         if not os.path.exists(resamples_dir):
             print(f"Resamples directory not found: {resamples_dir}")
@@ -206,7 +200,9 @@ class PropertyRunner:
             model_safe = model.replace("/", "_").replace("-", "_")
 
             # First try: config-{base_config_name}-{f_config_base}_{model}_flowchart.json
-            flowchart_path = f"flowcharts/{prompt_index}/config-{base_config_name}-{f_config_base}_{model_safe}_flowchart.json"
+            flowchart_path = FileUtils.get_flowchart_file_path(
+                prompt_index, base_config_name, f_config_base, [model]
+            )
 
             print(f"Looking for flowchart: {flowchart_path}")
             if not os.path.exists(flowchart_path):
@@ -308,7 +304,7 @@ class PropertyRunner:
                 # For now, we'll try all models and see which file exists
                 source_file_path = None
                 for model in self.config["models"]:
-                    potential_path = f"prompts/{prompt_index}/{model}/rollouts/{seed}.json"
+                    potential_path = FileUtils.get_rollout_file_path(prompt_index, model, seed)
                     if os.path.exists(potential_path):
                         source_file_path = potential_path
                         break
@@ -322,9 +318,7 @@ class PropertyRunner:
                 # We need to determine which model this response came from
                 source_file_path = None
                 for model in self.config["models"]:
-                    potential_path = (
-                        f"prompts/{prompt_index}/{model}/resamples/{prefix}/{seed}.json"
-                    )
+                    potential_path = FileUtils.get_resample_file_path(prompt_index, model, prefix, seed)
                     if os.path.exists(potential_path):
                         source_file_path = potential_path
                         break
@@ -371,6 +365,7 @@ class PropertyRunner:
             prompt_index, base_config_name, f_config_name
         )
 
+
         if not os.path.exists(flowchart_path):
             print(f"Flowchart file not found: {flowchart_path}")
             return
@@ -381,8 +376,8 @@ class PropertyRunner:
             return
 
         registry = {
-            "debug_multi_algorithm": PropertyCheckerDebugMultiAlgorithm,
-            "multi_algorithm": PropertyCheckerMultiAlgorithm,
+            name: cls for name, cls in PROPERTY_CHECKER_REGISTRY.items()
+            if hasattr(cls, "get_value_for_node")
         }
 
         node_checkers = {}

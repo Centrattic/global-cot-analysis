@@ -371,7 +371,7 @@ class FlowchartGenerator:
 class LabelGenerator:
     """Generates labels for an existing flowchart using the LLM labeler."""
 
-    def generate_labels_from_config(self, config: Dict[str, Any]) -> None:
+    def generate_labels_from_config(self, config: Dict[str, Any], recompute: bool = False) -> None:
         prompt_index = config["prompt"]
         models = config.get("models", [])
         flowchart_path = FileUtils.get_flowchart_file_path(
@@ -385,8 +385,20 @@ class LabelGenerator:
             flowchart_path,
         )
 
+        # Check if labels already exist
+        if not recompute:
+            has_labels = False
+            for node_obj in flowchart.get("nodes", []):
+                cluster_key = list(node_obj.keys())[0]
+                if "label" in node_obj[cluster_key]:
+                    has_labels = True
+                    break
+            if has_labels:
+                print(f"Labels already exist, skipping (use --recompute to force)")
+                return
+
         prompt_text = load_prompt_text(
-            "prompts/prompts.json",
+            FileUtils.get_prompts_file_path(),
             prompt_index,
         )
         mw = int(config.f.max_workers)

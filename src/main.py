@@ -61,7 +61,7 @@ def main_with_config(cfg: DictConfig, command: str, recompute: bool = False) -> 
         from src.flowchart.flowchart_generator import LabelGenerator
 
         generator = LabelGenerator()
-        generator.generate_labels_from_config(cfg)
+        generator.generate_labels_from_config(cfg, recompute=recompute)
 
     elif command == "graphviz":
         from src.flowchart.graphviz_generator import GraphvizGenerator
@@ -75,7 +75,7 @@ def main_with_config(cfg: DictConfig, command: str, recompute: bool = False) -> 
     elif command in ("predictions", "prediction"):
         from src.predictions.prediction_runner import PredictionRunner
 
-        runner = PredictionRunner(cfg, use_condensed=False, use_fully_condensed=False)
+        runner = PredictionRunner(cfg, use_condensed=False, use_fully_condensed=False, recompute=recompute)
         runner.run_predictions_from_config(cfg._name_)
 
     elif command == "properties":

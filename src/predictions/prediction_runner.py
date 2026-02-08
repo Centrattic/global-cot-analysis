@@ -21,7 +21,7 @@ class PredictionRunner:
     """Handles running prediction analyses using the 'current' method."""
 
     def __init__(
-        self, config: DictConfig, use_condensed: bool = False, use_fully_condensed: bool = False
+        self, config: DictConfig, use_condensed: bool = False, use_fully_condensed: bool = False, recompute: bool = False
     ):
         """Initialize prediction runner with configuration."""
         self.config = config
@@ -29,6 +29,7 @@ class PredictionRunner:
         self.models = config.models
         self.use_condensed = bool(use_condensed)
         self.use_fully_condensed = bool(use_fully_condensed)
+        self.recompute = recompute
 
         # Get prediction config (guaranteed to exist by main.py)
         self.p_config = config.p
@@ -55,8 +56,9 @@ class PredictionRunner:
         base_predictions_dir = Path(f"prompts/{self.prompt}/{model}/predictions")
         base_predictions_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create method-specific predictions directory
-        predictions_dir = base_predictions_dir / "current"
+        # Create method-specific predictions directory with p-config subfolder
+        p_config_name = getattr(self.p_config, "_name_", "default")
+        predictions_dir = base_predictions_dir / "current" / p_config_name
         if self.use_fully_condensed:
             predictions_dir = predictions_dir / "fully_condensed"
         elif self.use_condensed:
@@ -142,7 +144,11 @@ class PredictionRunner:
 
         csv_path = predictions_dir / f"{output_base_name}.csv"
 
-        # Always run comparison (overwrite existing files)
+        # Check if results already exist
+        if csv_path.exists() and not self.recompute:
+            print(f"Predictions already exist at {csv_path}, skipping (use --recompute to force)")
+            return
+
         if csv_path.exists():
             print(f"Overwriting existing prefix prediction comparison: {csv_path}")
 

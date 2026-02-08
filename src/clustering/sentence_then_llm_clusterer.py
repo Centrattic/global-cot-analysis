@@ -2,34 +2,36 @@
 Sentence-then-LLM clustering for generating flowcharts.
 """
 
-from typing import Dict, Any, List, Tuple
-import igraph as ig
-import leidenalg as la
-import numpy as np
-from sentence_transformers import SentenceTransformer
-from sklearn.cluster import AgglomerativeClustering
-import requests
 import json
 import os
-import time
 import threading
-from dataclasses import dataclass
+import time
 from collections import defaultdict
-from tqdm import tqdm
-from joblib import (
-    Parallel,
-    delayed,
-)
 from concurrent.futures import (
     ThreadPoolExecutor,
     as_completed,
 )
+from dataclasses import dataclass
+from typing import Any, Dict, List, Tuple
+
+import igraph as ig
+import leidenalg as la
+import numpy as np
+import requests
 from dotenv import load_dotenv
+from joblib import (
+    Parallel,
+    delayed,
+)
+from sentence_transformers import SentenceTransformer
+from sklearn.cluster import AgglomerativeClustering
+from tqdm import tqdm
 
 load_dotenv()
 
-from .base import BaseClusterer
 from src.utils.json_utils import load_json
+
+from .base import BaseClusterer
 
 
 @dataclass
@@ -145,8 +147,6 @@ class SentenceThenLLMClusterer(BaseClusterer):
             clusters,
             candidate_pairs,
         )
-        print("Step 3: Skipping LLM refinement (sentence-only mode)")
-        merged_clusters = clusters
 
         print("Step 5: Creating rollout edges")
         rollout_edges = self._create_rollout_edges(
@@ -238,8 +238,8 @@ class SentenceThenLLMClusterer(BaseClusterer):
         responses: Dict[str, Any],
     ) -> float:
         """Calculate Shannon entropy from answer distribution."""
-        from collections import Counter
         import math
+        from collections import Counter
 
         answers = []
         seen_rollouts = set()
@@ -279,8 +279,9 @@ class SentenceThenLLMClusterer(BaseClusterer):
 
         prompt_text = load_prompt_text("prompts/prompts.json", prompt_index)
 
-        from src.utils.json_utils import load_json
         from pathlib import Path
+
+        from src.utils.json_utils import load_json
 
         algorithms_path = Path("prompts/algorithms.json")
         algorithms = {}
