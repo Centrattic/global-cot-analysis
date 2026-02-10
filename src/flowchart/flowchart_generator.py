@@ -22,6 +22,8 @@ from src.property_checkers import (
     PropertyCheckerCorrectness,
     PropertyCheckerResampled,
     PropertyCheckerMultiAlgorithm,
+    PropertyCheckerCondition,
+    PropertyCheckerUnfaithful,
 )
 
 
@@ -33,6 +35,8 @@ class FlowchartGenerator:
             "correctness": PropertyCheckerCorrectness(),
             "resampled": PropertyCheckerResampled(),
             "multi_algorithm": PropertyCheckerMultiAlgorithm(),
+            "condition": PropertyCheckerCondition(),
+            "unfaithful": PropertyCheckerUnfaithful(),
         }
 
     def _calculate_edge_entropy(self, edge: Dict[str, str], responses: Dict[str, Any]) -> float:

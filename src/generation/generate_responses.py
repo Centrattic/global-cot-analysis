@@ -615,8 +615,11 @@ class APIResponseGenerator:
                 "seed": seed,
                 "reasoning": {"effort": reasoning_effort, "exclude": False},
                 "include_reasoning": True,
-                "provider": {"only": [get_model_provider(model)]},
             }
+
+            provider = get_model_provider(model)
+            if provider is not None:
+                payload["provider"] = {"only": [provider]}
 
             response = requests.post(
                 f"{self.base_url}/chat/completions",

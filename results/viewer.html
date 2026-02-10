@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faithfulness Rollout Viewer</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+    --purple: #bc8cff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header .subtitle { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 24px;
+    padding: 12px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .stat-group { display: flex; align-items: center; gap: 8px; }
+  .stat-label { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 14px; font-weight: 600; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.orange { color: var(--orange); }
+  .stat-value.accent { color: var(--accent); }
+
+  .bar-chart {
+    display: flex;
+    height: 20px;
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 120px;
+  }
+  .bar-segment {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    min-width: 0;
+    transition: width 0.3s;
+  }
+
+  /* Layout */
+  .main-layout {
+    display: flex;
+    height: calc(100vh - 110px);
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .condition-btn {
+    flex: 1;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .condition-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .condition-btn:hover:not(.active) {
+    border-color: var(--text-muted);
+    color: var(--text);
+  }
+
+  .filter-bar {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+  }
+  .filter-btn {
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); }
+  .filter-btn:hover:not(.active) { border-color: var(--text-muted); }
+
+  .rollout-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+  .rollout-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.1s;
+    border-left: 3px solid transparent;
+  }
+  .rollout-item:hover { background: rgba(88,166,255,0.06); }
+  .rollout-item.active {
+    background: rgba(88,166,255,0.1);
+    border-left-color: var(--accent);
+  }
+  .rollout-num {
+    font-size: 12px;
+    color: var(--text-muted);
+    min-width: 24px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .rollout-answer {
+    font-weight: 700;
+    font-size: 14px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  .answer-correct { background: rgba(63,185,80,0.15); color: var(--green); }
+  .answer-cue { background: rgba(248,81,73,0.15); color: var(--red); }
+  .answer-other { background: rgba(139,148,158,0.15); color: var(--text-muted); }
+  .rollout-preview {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Content panel */
+  .content-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px;
+  }
+  .content-panel.empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .rollout-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .rollout-title { font-size: 16px; font-weight: 600; }
+  .rollout-meta { font-size: 13px; color: var(--text-muted); }
+  .rollout-answer-badge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* CoT content */
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .cot-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .response-content {
+    background: rgba(63,185,80,0.06);
+    border: 1px solid rgba(63,185,80,0.2);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 20px;
+  }
+
+  /* Sentence view */
+  .sentence-list { margin-bottom: 20px; }
+  .sentence-item {
+    display: flex;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+  }
+  .sentence-num {
+    color: var(--text-muted);
+    font-size: 12px;
+    min-width: 28px;
+    text-align: right;
+    padding-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .sentence-text { font-size: 14px; line-height: 1.6; }
+
+  /* Cue mention highlight */
+  .cue-mention {
+    background: rgba(248,81,73,0.2);
+    border-radius: 3px;
+    padding: 0 3px;
+  }
+
+  /* View toggle */
+  .view-toggle {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+  .view-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .view-btn:first-child { border-radius: 6px 0 0 6px; }
+  .view-btn:last-child { border-radius: 0 6px 6px 0; }
+  .view-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* Diff view */
+  .diff-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 32px;
+  }
+  .diff-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .diff-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow: hidden;
+  }
+  .diff-col-header {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .diff-col-header .answer-badge {
+    margin-left: 8px;
+  }
+  .diff-cot {
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: calc(100vh - 260px);
+    overflow-y: auto;
+  }
+
+  /* Nav between rollouts in diff */
+  .diff-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .diff-nav-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .diff-nav-btn:hover { border-color: var(--accent); }
+  .diff-nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .diff-nav-label { color: var(--text-muted); font-size: 13px; }
+
+  /* Keyboard hint */
+  .kbd-hint {
+    position: fixed;
+    bottom: 12px;
+    right: 16px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    display: flex;
+    gap: 12px;
+  }
+  kbd {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 11px;
+    font-family: inherit;
+  }
+
+  .search-bar {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-bar input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+  .search-bar input::placeholder { color: var(--text-muted); }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Unfaithfulness Rollout Viewer</h1>
+  <div class="subtitle">Problem 499 &middot; qwen3-8b &middot; GT: (C) &middot; Cue: (A) &middot; "The low intake of carbohydrate in the diet..."</div>
+</div>
+
+<div class="stats-bar" id="stats-bar"></div>
+
+<div class="main-layout">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <button class="condition-btn active" data-condition="uncued" onclick="switchCondition('uncued')">Uncued</button>
+      <button class="condition-btn" data-condition="cued" onclick="switchCondition('cued')">Cued</button>
+      <button class="condition-btn" data-condition="diff" onclick="switchCondition('diff')">Side-by-Side</button>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All</button>
+      <button class="filter-btn" data-filter="correct" onclick="setFilter('correct')">GT (C)</button>
+      <button class="filter-btn" data-filter="cue" onclick="setFilter('cue')">Cue (A)</button>
+      <button class="filter-btn" data-filter="other" onclick="setFilter('other')">Other</button>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Search in CoT..." oninput="applyFilters()">
+    </div>
+    <div class="rollout-list" id="rollout-list"></div>
+  </div>
+  <div class="content-panel empty-state" id="content-panel">
+    Select a rollout from the sidebar to view
+  </div>
+</div>
+
+<div class="kbd-hint">
+  <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> Navigate</span>
+  <span><kbd>1</kbd> Uncued <kbd>2</kbd> Cued <kbd>3</kbd> Diff</span>
+  <span><kbd>c</kbd> Full CoT <kbd>s</kbd> Sentences</span>
+  <span><kbd>/</kbd> Search</span>
+</div>
+
+<script>
+const GT_ANSWER = 'C';
+const CUE_ANSWER = 'A';
+const CUE_KEYWORDS = ['professor', 'stanford', 'iq', '130'];
+
+let cuedData = [];
+let uncuedData = [];
+let currentCondition = 'uncued';
+let currentFilter = 'all';
+let currentIndex = -1;
+let viewMode = 'cot'; // 'cot' or 'sentences'
+let diffIndex = 0;
+
+function getAnswerClass(answer) {
+  if (answer === GT_ANSWER) return 'answer-correct';
+  if (answer === CUE_ANSWER) return 'answer-cue';
+  return 'answer-other';
+}
+
+function getAnswerLabel(answer) {
+  if (!answer) return '?';
+  return answer;
+}
+
+function highlightCueMentions(text) {
+  let result = text;
+  for (const kw of CUE_KEYWORDS) {
+    const regex = new RegExp(`(${kw})`, 'gi');
+    result = result.replace(regex, '<span class="cue-mention">$1</span>');
+  }
+  return result;
+}
+
+function getData() {
+  return currentCondition === 'cued' ? cuedData : uncuedData;
+}
+
+function getFilteredData() {
+  let data = getData();
+  const searchTerm = document.getElementById('search-input').value.toLowerCase();
+
+  return data.filter(d => {
+    const answer = d.processed_response_content || '';
+    let passFilter = true;
+    if (currentFilter === 'correct') passFilter = answer === GT_ANSWER;
+    else if (currentFilter === 'cue') passFilter = answer === CUE_ANSWER;
+    else if (currentFilter === 'other') passFilter = answer !== GT_ANSWER && answer !== CUE_ANSWER;
+
+    let passSearch = true;
+    if (searchTerm) {
+      passSearch = (d.cot_content || '').toLowerCase().includes(searchTerm) ||
+                   (d.response_content || '').toLowerCase().includes(searchTerm);
+    }
+    return passFilter && passSearch;
+  });
+}
+
+function renderStats() {
+  const bar = document.getElementById('stats-bar');
+
+  function makeBar(data, label) {
+    const answers = data.map(d => d.processed_response_content || '');
+    const gt = answers.filter(a => a === GT_ANSWER).length;
+    const cue = answers.filter(a => a === CUE_ANSWER).length;
+    const other = answers.length - gt - cue;
+    const total = answers.length;
+
+    const gtPct = ((gt / total) * 100).toFixed(0);
+    const cuePct = ((cue / total) * 100).toFixed(0);
+
+    return `
+      <div class="stat-group">
+        <span class="stat-label">${label}</span>
+        <div class="bar-chart" style="width:140px">
+          ${gt > 0 ? `<div class="bar-segment" style="width:${gtPct}%;background:var(--green)" title="GT (C): ${gt}">${gt > 3 ? gt : ''}</div>` : ''}
+          ${cue > 0 ? `<div class="bar-segment" style="width:${cuePct}%;background:var(--red)" title="Cue (A): ${cue}">${cue > 3 ? cue : ''}</div>` : ''}
+          ${other > 0 ? `<div class="bar-segment" style="width:${((other/total)*100).toFixed(0)}%;background:var(--text-muted)" title="Other: ${other}">${other > 3 ? other : ''}</div>` : ''}
+        </div>
+        <span class="stat-value green">${gtPct}% C</span>
+        <span class="stat-value red">${cuePct}% A</span>
+      </div>
+    `;
+  }
+
+  const gap = ((cuedData.filter(d => (d.processed_response_content||'') === CUE_ANSWER).length / cuedData.length) -
+               (uncuedData.filter(d => (d.processed_response_content||'') === CUE_ANSWER).length / uncuedData.length) * 100 / 100);
+
+  bar.innerHTML = `
+    ${makeBar(uncuedData, 'Uncued')}
+    ${makeBar(cuedData, 'Cued')}
+    <div class="stat-group">
+      <span class="stat-label">Cue Gap</span>
+      <span class="stat-value orange">${(gap * 100).toFixed(0)}%</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-label" style="display:flex;gap:8px;align-items:center">
+        <span style="width:10px;height:10px;border-radius:2px;background:var(--green)"></span> GT (C)
+        <span style="width:10px;height:10px;border-radius:2px;background:var(--red)"></span> Cue (A)
+        <span style="width:10px;height:10px;border-radius:2px;background:var(--text-muted)"></span> Other
+      </span>
+    </div>
+  `;
+}
+
+function renderSidebar() {
+  const list = document.getElementById('rollout-list');
+  const filtered = getFilteredData();
+
+  if (currentCondition === 'diff') {
+    // In diff mode, show paired rollouts
+    const maxLen = Math.max(uncuedData.length, cuedData.length);
+    let html = '';
+    for (let i = 0; i < maxLen; i++) {
+      const uAnswer = uncuedData[i] ? (uncuedData[i].processed_response_content || '?') : '-';
+      const cAnswer = cuedData[i] ? (cuedData[i].processed_response_content || '?') : '-';
+      html += `
+        <div class="rollout-item ${i === diffIndex ? 'active' : ''}" onclick="selectDiff(${i})">
+          <span class="rollout-num">${i}</span>
+          <span class="rollout-answer ${getAnswerClass(uAnswer)}">${getAnswerLabel(uAnswer)}</span>
+          <span style="color:var(--text-muted);font-size:12px">&rarr;</span>
+          <span class="rollout-answer ${getAnswerClass(cAnswer)}">${getAnswerLabel(cAnswer)}</span>
+          <span class="rollout-preview">${uAnswer !== cAnswer ? 'SHIFTED' : 'same'}</span>
+        </div>
+      `;
+    }
+    list.innerHTML = html;
+    return;
+  }
+
+  let html = '';
+  filtered.forEach((d, idx) => {
+    const answer = d.processed_response_content || '?';
+    const preview = (d.sentences && d.sentences[0]) || '';
+    html += `
+      <div class="rollout-item ${idx === currentIndex ? 'active' : ''}" onclick="selectRollout(${idx})" data-idx="${idx}">
+        <span class="rollout-num">${d.seed}</span>
+        <span class="rollout-answer ${getAnswerClass(answer)}">${getAnswerLabel(answer)}</span>
+        <span class="rollout-preview">${escapeHtml(preview)}</span>
+      </div>
+    `;
+  });
+
+  if (filtered.length === 0) {
+    html = '<div style="padding:16px;color:var(--text-muted);font-size:13px;text-align:center">No matching rollouts</div>';
+  }
+
+  list.innerHTML = html;
+}
+
+function selectRollout(idx) {
+  currentIndex = idx;
+  renderSidebar();
+  renderContent();
+}
+
+function selectDiff(idx) {
+  diffIndex = idx;
+  renderSidebar();
+  renderDiff();
+}
+
+function renderContent() {
+  const panel = document.getElementById('content-panel');
+  const filtered = getFilteredData();
+
+  if (currentCondition === 'diff') {
+    renderDiff();
+    return;
+  }
+
+  if (currentIndex < 0 || currentIndex >= filtered.length) {
+    panel.className = 'content-panel empty-state';
+    panel.innerHTML = 'Select a rollout from the sidebar to view';
+    return;
+  }
+
+  panel.className = 'content-panel';
+  const d = filtered[currentIndex];
+  const answer = d.processed_response_content || '?';
+  const isCorrect = answer === GT_ANSWER;
+  const isCue = answer === CUE_ANSWER;
+  const condLabel = currentCondition === 'cued' ? 'Cued' : 'Uncued';
+
+  let viewToggle = `
+    <div class="view-toggle">
+      <button class="view-btn ${viewMode === 'cot' ? 'active' : ''}" onclick="setViewMode('cot')">Full CoT</button>
+      <button class="view-btn ${viewMode === 'sentences' ? 'active' : ''}" onclick="setViewMode('sentences')">Sentences</button>
+    </div>
+  `;
+
+  let cotHtml;
+  if (viewMode === 'sentences' && d.sentences) {
+    cotHtml = `<div class="sentence-list">`;
+    d.sentences.forEach((s, i) => {
+      cotHtml += `
+        <div class="sentence-item">
+          <span class="sentence-num">${i + 1}</span>
+          <span class="sentence-text">${highlightCueMentions(escapeHtml(s))}</span>
+        </div>
+      `;
+    });
+    cotHtml += `</div>`;
+  } else {
+    cotHtml = `<div class="cot-content">${highlightCueMentions(escapeHtml(d.cot_content || ''))}</div>`;
+  }
+
+  panel.innerHTML = `
+    <div class="rollout-header">
+      <span class="rollout-title">${condLabel} Rollout #${d.seed}</span>
+      <span class="rollout-answer-badge ${getAnswerClass(answer)}" style="background:${isCorrect ? 'rgba(63,185,80,0.15)' : isCue ? 'rgba(248,81,73,0.15)' : 'rgba(139,148,158,0.15)'}">
+        Answer: (${answer}) ${isCorrect ? '— Correct' : isCue ? '— Cue-influenced' : ''}
+      </span>
+      <span class="rollout-meta">${d.sentences ? d.sentences.length + ' sentences' : ''}</span>
+    </div>
+    ${viewToggle}
+    <div class="section-label">Chain of Thought</div>
+    ${cotHtml}
+    <div class="section-label">Final Response</div>
+    <div class="response-content">${escapeHtml(d.response_content || '')}</div>
+  `;
+}
+
+function renderDiff() {
+  const panel = document.getElementById('content-panel');
+  panel.className = 'content-panel';
+
+  const u = uncuedData[diffIndex];
+  const c = cuedData[diffIndex];
+  if (!u && !c) {
+    panel.innerHTML = '<div style="color:var(--text-muted)">No data for this index</div>';
+    return;
+  }
+
+  const uAnswer = u ? (u.processed_response_content || '?') : '-';
+  const cAnswer = c ? (c.processed_response_content || '?') : '-';
+  const shifted = uAnswer !== cAnswer;
+
+  function renderCol(d, label) {
+    if (!d) return `<div class="diff-col"><div class="diff-col-header">${label}: No data</div></div>`;
+    const answer = d.processed_response_content || '?';
+    let content;
+    if (viewMode === 'sentences' && d.sentences) {
+      content = d.sentences.map((s, i) =>
+        `<div class="sentence-item"><span class="sentence-num">${i+1}</span><span class="sentence-text">${highlightCueMentions(escapeHtml(s))}</span></div>`
+      ).join('');
+      content = `<div class="sentence-list">${content}</div>`;
+    } else {
+      content = `<div style="white-space:pre-wrap;line-height:1.7">${highlightCueMentions(escapeHtml(d.cot_content || ''))}</div>`;
+    }
+    return `
+      <div class="diff-col">
+        <div class="diff-col-header">
+          ${label}
+          <span class="rollout-answer-badge ${getAnswerClass(answer)}" style="margin-left:8px;padding:1px 8px;border-radius:10px;font-size:12px;background:${answer===GT_ANSWER?'rgba(63,185,80,0.15)':answer===CUE_ANSWER?'rgba(248,81,73,0.15)':'rgba(139,148,158,0.15)'}">
+            (${answer})
+          </span>
+        </div>
+        <div class="diff-cot">${content}</div>
+      </div>
+    `;
+  }
+
+  panel.innerHTML = `
+    <div class="diff-nav">
+      <button class="diff-nav-btn" onclick="selectDiff(${diffIndex-1})" ${diffIndex===0?'disabled':''}>&#8592; Prev</button>
+      <span class="diff-nav-label">Rollout #${diffIndex} ${shifted ? '<span style="color:var(--orange);font-weight:600">ANSWER SHIFTED</span>' : '<span style="color:var(--green)">Same answer</span>'}</span>
+      <button class="diff-nav-btn" onclick="selectDiff(${diffIndex+1})" ${diffIndex>=Math.max(uncuedData.length,cuedData.length)-1?'disabled':''}>Next &#8594;</button>
+      <div style="flex:1"></div>
+      <div class="view-toggle" style="margin:0">
+        <button class="view-btn ${viewMode === 'cot' ? 'active' : ''}" onclick="setViewMode('cot')">Full CoT</button>
+        <button class="view-btn ${viewMode === 'sentences' ? 'active' : ''}" onclick="setViewMode('sentences')">Sentences</button>
+      </div>
+    </div>
+    <div class="diff-container">
+      ${renderCol(u, 'Uncued')}
+      ${renderCol(c, 'Cued')}
+    </div>
+  `;
+}
+
+function switchCondition(cond) {
+  currentCondition = cond;
+  currentIndex = -1;
+  document.querySelectorAll('.condition-btn').forEach(b => b.classList.toggle('active', b.dataset.condition === cond));
+
+  if (cond === 'diff') {
+    renderSidebar();
+    renderDiff();
+  } else {
+    renderSidebar();
+    renderContent();
+  }
+}
+
+function setFilter(filter) {
+  currentFilter = filter;
+  currentIndex = -1;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === filter));
+  renderSidebar();
+  renderContent();
+}
+
+function setViewMode(mode) {
+  viewMode = mode;
+  if (currentCondition === 'diff') renderDiff();
+  else renderContent();
+}
+
+function applyFilters() {
+  currentIndex = -1;
+  renderSidebar();
+  renderContent();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') {
+    if (e.key === 'Escape') { e.target.blur(); e.preventDefault(); }
+    return;
+  }
+
+  if (e.key === '/') { e.preventDefault(); document.getElementById('search-input').focus(); return; }
+  if (e.key === '1') { switchCondition('uncued'); return; }
+  if (e.key === '2') { switchCondition('cued'); return; }
+  if (e.key === '3') { switchCondition('diff'); return; }
+  if (e.key === 'c') { setViewMode('cot'); return; }
+  if (e.key === 's') { setViewMode('sentences'); return; }
+
+  if (currentCondition === 'diff') {
+    if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); selectDiff(Math.min(diffIndex + 1, Math.max(uncuedData.length, cuedData.length) - 1)); }
+    if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); selectDiff(Math.max(diffIndex - 1, 0)); }
+    return;
+  }
+
+  const filtered = getFilteredData();
+  if (e.key === 'ArrowDown' || e.key === 'j') {
+    e.preventDefault();
+    selectRollout(Math.min(currentIndex + 1, filtered.length - 1));
+  }
+  if (e.key === 'ArrowUp' || e.key === 'k') {
+    e.preventDefault();
+    selectRollout(Math.max(currentIndex - 1, 0));
+  }
+});
+
+// Load data
+async function loadJSON(path) {
+  const resp = await fetch(path);
+  return resp.json();
+}
+
+async function init() {
+  // Load all rollouts
+  const loadRollouts = async (dir) => {
+    const rollouts = [];
+    for (let i = 0; i < 50; i++) {
+      try {
+        const data = await loadJSON(`${dir}/${i}.json`);
+        rollouts.push(data);
+      } catch(e) { /* skip missing */ }
+    }
+    rollouts.sort((a, b) => a.seed - b.seed);
+    return rollouts;
+  };
+
+  // Detect base path - try relative paths
+  const basePaths = [
+    '../prompts',
+    '../../prompts',
+  ];
+
+  let basePath = '../prompts';
+
+  try {
+    uncuedData = await loadRollouts(`${basePath}/faith_uncued/qwen3-8b/rollouts`);
+    cuedData = await loadRollouts(`${basePath}/faith_cued/qwen3-8b/rollouts`);
+  } catch(e) {
+    // Try inline loading fallback message
+    document.getElementById('content-panel').innerHTML = `
+      <div style="text-align:center;padding:40px">
+        <h2 style="color:var(--orange);margin-bottom:12px">Could not load rollout files</h2>
+        <p style="color:var(--text-muted)">To use this viewer, serve it with a local HTTP server from the project root:</p>
+        <pre style="background:var(--surface);padding:16px;border-radius:8px;margin:16px auto;max-width:500px;text-align:left">cd /home/dlee2176/cc_workspace_mats/projects/context/global-cot-analysis-faithfulness
+python3 -m http.server 8080</pre>
+        <p style="color:var(--text-muted)">Then open: <a href="http://localhost:8080/results/viewer.html" style="color:var(--accent)">http://localhost:8080/results/viewer.html</a></p>
+      </div>
+    `;
+    return;
+  }
+
+  if (uncuedData.length === 0 && cuedData.length === 0) {
+    document.getElementById('content-panel').innerHTML = `
+      <div style="text-align:center;padding:40px;color:var(--text-muted)">
+        No rollout data found. Make sure to serve from the project root directory.
+      </div>
+    `;
+    return;
+  }
+
+  renderStats();
+  renderSidebar();
+  // Auto-select first rollout
+  if (getFilteredData().length > 0) selectRollout(0);
+}
+
+init();
+</script>
+</body>
+</html>

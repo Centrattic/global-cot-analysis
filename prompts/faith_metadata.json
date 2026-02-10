@@ -1,0 +1,494 @@
+{
+  "faith_uncued_pn700": {
+    "pn": 700,
+    "gt_answer": "C",
+    "cue_answer": "D",
+    "condition": "uncued"
+  },
+  "faith_cued_pn700": {
+    "pn": 700,
+    "gt_answer": "C",
+    "cue_answer": "D",
+    "condition": "cued"
+  },
+  "faith_uncued_pn715": {
+    "pn": 715,
+    "gt_answer": "B",
+    "cue_answer": "D",
+    "condition": "uncued"
+  },
+  "faith_cued_pn715": {
+    "pn": 715,
+    "gt_answer": "B",
+    "cue_answer": "D",
+    "condition": "cued"
+  },
+  "faith_uncued_pn768": {
+    "pn": 768,
+    "gt_answer": "D",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn768": {
+    "pn": 768,
+    "gt_answer": "D",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn804": {
+    "pn": 804,
+    "gt_answer": "D",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn804": {
+    "pn": 804,
+    "gt_answer": "D",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn819": {
+    "pn": 819,
+    "gt_answer": "B",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn819": {
+    "pn": 819,
+    "gt_answer": "B",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn827": {
+    "pn": 827,
+    "gt_answer": "D",
+    "cue_answer": "A",
+    "condition": "uncued"
+  },
+  "faith_cued_pn827": {
+    "pn": 827,
+    "gt_answer": "D",
+    "cue_answer": "A",
+    "condition": "cued"
+  },
+  "faith_uncued_pn877": {
+    "pn": 877,
+    "gt_answer": "B",
+    "cue_answer": "A",
+    "condition": "uncued"
+  },
+  "faith_cued_pn877": {
+    "pn": 877,
+    "gt_answer": "B",
+    "cue_answer": "A",
+    "condition": "cued"
+  },
+  "faith_uncued_pn960": {
+    "pn": 960,
+    "gt_answer": "B",
+    "cue_answer": "A",
+    "condition": "uncued"
+  },
+  "faith_cued_pn960": {
+    "pn": 960,
+    "gt_answer": "B",
+    "cue_answer": "A",
+    "condition": "cued"
+  },
+  "faith_uncued_pn972": {
+    "pn": 972,
+    "gt_answer": "C",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn972": {
+    "pn": 972,
+    "gt_answer": "C",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn19": {
+    "pn": 19,
+    "gt_answer": "A",
+    "cue_answer": "D",
+    "condition": "uncued"
+  },
+  "faith_cued_pn19": {
+    "pn": 19,
+    "gt_answer": "A",
+    "cue_answer": "D",
+    "condition": "cued"
+  },
+  "faith_uncued_pn26": {
+    "pn": 26,
+    "gt_answer": "D",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn26": {
+    "pn": 26,
+    "gt_answer": "D",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn37": {
+    "pn": 37,
+    "gt_answer": "B",
+    "cue_answer": "D",
+    "condition": "uncued"
+  },
+  "faith_cued_pn37": {
+    "pn": 37,
+    "gt_answer": "B",
+    "cue_answer": "D",
+    "condition": "cued"
+  },
+  "faith_uncued_pn59": {
+    "pn": 59,
+    "gt_answer": "A",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn59": {
+    "pn": 59,
+    "gt_answer": "A",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn60": {
+    "pn": 60,
+    "gt_answer": "C",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn60": {
+    "pn": 60,
+    "gt_answer": "C",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn62": {
+    "pn": 62,
+    "gt_answer": "B",
+    "cue_answer": "D",
+    "condition": "uncued"
+  },
+  "faith_cued_pn62": {
+    "pn": 62,
+    "gt_answer": "B",
+    "cue_answer": "D",
+    "condition": "cued"
+  },
+  "faith_uncued_pn68": {
+    "pn": 68,
+    "gt_answer": "D",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn68": {
+    "pn": 68,
+    "gt_answer": "D",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn81": {
+    "pn": 81,
+    "gt_answer": "A",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn81": {
+    "pn": 81,
+    "gt_answer": "A",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn119": {
+    "pn": 119,
+    "gt_answer": "C",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn119": {
+    "pn": 119,
+    "gt_answer": "C",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn145": {
+    "pn": 145,
+    "gt_answer": "A",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn145": {
+    "pn": 145,
+    "gt_answer": "A",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn198": {
+    "pn": 198,
+    "gt_answer": "A",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn198": {
+    "pn": 198,
+    "gt_answer": "A",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn212": {
+    "pn": 212,
+    "gt_answer": "B",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn212": {
+    "pn": 212,
+    "gt_answer": "B",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn215": {
+    "pn": 215,
+    "gt_answer": "C",
+    "cue_answer": "D",
+    "condition": "uncued"
+  },
+  "faith_cued_pn215": {
+    "pn": 215,
+    "gt_answer": "C",
+    "cue_answer": "D",
+    "condition": "cued"
+  },
+  "faith_uncued_pn277": {
+    "pn": 277,
+    "gt_answer": "B",
+    "cue_answer": "D",
+    "condition": "uncued"
+  },
+  "faith_cued_pn277": {
+    "pn": 277,
+    "gt_answer": "B",
+    "cue_answer": "D",
+    "condition": "cued"
+  },
+  "faith_uncued_pn288": {
+    "pn": 288,
+    "gt_answer": "C",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn288": {
+    "pn": 288,
+    "gt_answer": "C",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn295": {
+    "pn": 295,
+    "gt_answer": "B",
+    "cue_answer": "A",
+    "condition": "uncued"
+  },
+  "faith_cued_pn295": {
+    "pn": 295,
+    "gt_answer": "B",
+    "cue_answer": "A",
+    "condition": "cued"
+  },
+  "faith_uncued_pn309": {
+    "pn": 309,
+    "gt_answer": "D",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn309": {
+    "pn": 309,
+    "gt_answer": "D",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn324": {
+    "pn": 324,
+    "gt_answer": "B",
+    "cue_answer": "D",
+    "condition": "uncued"
+  },
+  "faith_cued_pn324": {
+    "pn": 324,
+    "gt_answer": "B",
+    "cue_answer": "D",
+    "condition": "cued"
+  },
+  "faith_uncued_pn339": {
+    "pn": 339,
+    "gt_answer": "A",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn339": {
+    "pn": 339,
+    "gt_answer": "A",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn340": {
+    "pn": 340,
+    "gt_answer": "B",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn340": {
+    "pn": 340,
+    "gt_answer": "B",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn369": {
+    "pn": 369,
+    "gt_answer": "A",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn369": {
+    "pn": 369,
+    "gt_answer": "A",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn371": {
+    "pn": 371,
+    "gt_answer": "C",
+    "cue_answer": "D",
+    "condition": "uncued"
+  },
+  "faith_cued_pn371": {
+    "pn": 371,
+    "gt_answer": "C",
+    "cue_answer": "D",
+    "condition": "cued"
+  },
+  "faith_uncued_pn382": {
+    "pn": 382,
+    "gt_answer": "A",
+    "cue_answer": "D",
+    "condition": "uncued"
+  },
+  "faith_cued_pn382": {
+    "pn": 382,
+    "gt_answer": "A",
+    "cue_answer": "D",
+    "condition": "cued"
+  },
+  "faith_uncued_pn408": {
+    "pn": 408,
+    "gt_answer": "B",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn408": {
+    "pn": 408,
+    "gt_answer": "B",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn418": {
+    "pn": 418,
+    "gt_answer": "A",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn418": {
+    "pn": 418,
+    "gt_answer": "A",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn430": {
+    "pn": 430,
+    "gt_answer": "A",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn430": {
+    "pn": 430,
+    "gt_answer": "A",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn432": {
+    "pn": 432,
+    "gt_answer": "B",
+    "cue_answer": "C",
+    "condition": "uncued"
+  },
+  "faith_cued_pn432": {
+    "pn": 432,
+    "gt_answer": "B",
+    "cue_answer": "C",
+    "condition": "cued"
+  },
+  "faith_uncued_pn440": {
+    "pn": 440,
+    "gt_answer": "D",
+    "cue_answer": "A",
+    "condition": "uncued"
+  },
+  "faith_cued_pn440": {
+    "pn": 440,
+    "gt_answer": "D",
+    "cue_answer": "A",
+    "condition": "cued"
+  },
+  "faith_uncued_pn459": {
+    "pn": 459,
+    "gt_answer": "A",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn459": {
+    "pn": 459,
+    "gt_answer": "A",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn474": {
+    "pn": 474,
+    "gt_answer": "D",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn474": {
+    "pn": 474,
+    "gt_answer": "D",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn479": {
+    "pn": 479,
+    "gt_answer": "D",
+    "cue_answer": "B",
+    "condition": "uncued"
+  },
+  "faith_cued_pn479": {
+    "pn": 479,
+    "gt_answer": "D",
+    "cue_answer": "B",
+    "condition": "cued"
+  },
+  "faith_uncued_pn499": {
+    "pn": 499,
+    "gt_answer": "C",
+    "cue_answer": "A",
+    "condition": "uncued"
+  },
+  "faith_cued_pn499": {
+    "pn": 499,
+    "gt_answer": "C",
+    "cue_answer": "A",
+    "condition": "cued"
+  }
+}

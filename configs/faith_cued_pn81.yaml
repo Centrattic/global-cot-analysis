@@ -1,0 +1,10 @@
+defaults:
+  - _self_
+  - r: default
+  - f: default
+
+_name_: "faith_cued_pn81"
+prompt: "faith_cued_pn81"
+models: ["qwen3-8b"]
+property_checkers: ["correctness"]
+command: "rollouts"

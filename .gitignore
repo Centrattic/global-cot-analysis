@@ -22,7 +22,13 @@ graph_layout_service/cache/
 # New folders
 outputs/
 embed_cache/
-prompts/
+prompts/*
 !prompts/prompts.json
 !prompts/prefixes.json
+!prompts/faith_metadata.json
+!prompts/summary.json
+!prompts/faith_cued/
+!prompts/faith_uncued/
+!prompts/faith_cued_pn*/
+!prompts/faith_uncued_pn*/
 multirun/

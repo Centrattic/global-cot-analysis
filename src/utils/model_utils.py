@@ -104,6 +104,20 @@ MODEL_CONFIGS = {
         activation_hook_config=None,
         provider="anthropic",
     ),
+    "deepseek-r1-qwen-14b": ModelConfig(
+        model_name="deepseek/deepseek-r1-distill-qwen-14b",
+        thought_tokens=["<think>", "</think>"],
+        response_tokens=["</think>", ""],
+        activation_hook_config=None,
+        provider="openrouter",
+    ),
+    "qwen3-8b": ModelConfig(
+        model_name="qwen/qwen3-8b",
+        thought_tokens=["<think>", "</think>"],
+        response_tokens=["</think>", ""],
+        activation_hook_config=None,
+        provider=None,
+    ),
 }
 
 
@@ -153,8 +167,30 @@ def parse_cot_content(
         prefix_text: The prefix text to prepend (for forced prefix/resample cases)
         is_completion: If True, parse using stripped token format from completions endpoint
     """
+    thought_tokens = get_thought_tokens(model_name)
+
+    # Handle <think>/<\/think> models (DeepSeek, Claude, etc.)
+    if thought_tokens == ["<think>", "</think>"]:
+        cot_content = ""
+        response_content = ""
+        if "<think>" in text:
+            start = text.find("<think>") + len("<think>")
+            end = text.find("</think>", start)
+            if end >= start:
+                cot_content = text[start:end].strip()
+                response_content = text[end + len("</think>"):].strip()
+            else:
+                # Missing closing tag — everything after <think> is CoT
+                cot_content = text[start:].strip()
+        else:
+            # No think tags — entire text is CoT
+            cot_content = text.strip()
+        if prefix_text:
+            cot_content = prefix_text + cot_content
+        return cot_content, response_content
+
     if model_name != "gpt-oss-20b":
-        raise ValueError(f"parse_cot_content only supports gpt-oss-20b, got: {model_name}")
+        raise ValueError(f"parse_cot_content only supports gpt-oss-20b and <think></think> models, got: {model_name}")
 
     # For completions endpoint, tokens are stripped (e.g. "assistantfinal" instead of full tokens)
     if is_completion:
